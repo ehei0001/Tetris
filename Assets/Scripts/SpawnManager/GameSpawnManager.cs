@@ -17,7 +17,7 @@ public class GameSpawnManager : SpawnManager
     {
         if (this.isCreating)
         {
-            this.BuildBlock();
+            this.BuildBlock(this.transform.position);
 
             this.isCreating = false;
         }

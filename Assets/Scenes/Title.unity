@@ -664,6 +664,7 @@ MonoBehaviour:
   blockPrefab: {fileID: 6053472703806854893, guid: 2b7c21cc61f54f84eb83e169c762b72c,
     type: 3}
   torqueStrength: 5
+  canvas: {fileID: 1393862283}
 --- !u!1 &627435945
 GameObject:
   m_ObjectHideFlags: 0

@@ -125,14 +125,14 @@ public class SpawnManager : MonoBehaviour
         cameraBounds = this.GetCameraBounds();
     }
 
-    protected GameObject BuildBlock()
+    protected GameObject BuildBlock(Vector3 position)
     {
         int index = Random.Range(0, this.blockDatas.Length);
         var blockData = this.blockDatas[index];
         Debug.Assert(blockData.Column * blockData.Row == blockData.Cells.Length);
         Debug.Assert(blockData.Cells.Length > 0);
 
-        var block = Instantiate(blockPrefab, this.transform);
+        var block = Instantiate(blockPrefab, position, Quaternion.identity);
 
         var cubeWidth = this.cubeSize.x;
         var cubeHeight = this.cubeSize.y;
