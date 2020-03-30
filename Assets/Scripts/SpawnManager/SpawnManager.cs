@@ -4,50 +4,56 @@ using UnityEngine;
 
 class BlockData
 {
-    public virtual int Column { get; }
-    public virtual int Row { get; }
+#if DEBUG
+    public BlockData()
+    {
+        Debug.Assert(this.Column == this.Row);
+        Debug.Assert(this.Column == Mathf.Sqrt(this.Cells.Length));
+    }
+#endif
+
+
+    public int Column { get { return (int)Mathf.Sqrt(this.Cells.Length); } }
+    public int Row { get { return this.Column; } }
     public virtual int[] Cells { get; }
 }
 
 class ITypeBlockData : BlockData
 {
-    public override int Column { get { return 4; } }
-    public override int Row { get { return 1; } }
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[]{
-        1,1,1,1
+        0,0,0,0,
+        1,1,1,1,
+        0,0,0,0,
+        0,0,0,0,
     };
 }
 
 class JTypeBlockData : BlockData
 {
-    public override int Column { get { return 3; } }
-    public override int Row { get { return 2; } }
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[] {
-        1, 0, 0,
-        1, 1, 1,
+        1,0,0,
+        1,1,1,
+        0,0,0,
     };
 }
 
 class LTypeBlockData : BlockData
 {
-    public override int Column { get { return 3; } }
-    public override int Row { get { return 2; } }
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[] {
-        0, 0, 1,
-        1, 1, 1,
+        0,0,1,
+        1,1,1,
+        0,0,0,
     };
 }
 
 class OTypeBlockData : BlockData
 {
-    public override int Column { get { return 2; } }
-    public override int Row { get { return 2; } }
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[] {
@@ -58,37 +64,34 @@ class OTypeBlockData : BlockData
 
 class STypeBlockData : BlockData
 {
-    public override int Column { get { return 3; } }
-    public override int Row { get { return 2; } }
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[] {
-        0, 1, 1,
-        1, 1, 0,
+        0,1,1,
+        1,1,0,
+        0,0,0,
     };
 }
 
 class TTypeBlockData : BlockData
 {
-    public override int Column { get { return 3; } }
-    public override int Row { get { return 2; } }
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[] { 
-        0, 1, 0, 
-        1, 1, 1,
+        0,1,0, 
+        1,1,1,
+        0,0,0,
     };
 }
 
 class ZTypeBlockData : BlockData
 {
-    public override int Column { get { return 3; } }
-    public override int Row { get { return 2; } }
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[] {
-        1, 1, 0,
-        0, 1, 1,
+        1,1,0,
+        0,1,1,
+        0,0,0,
     };
 }
 
@@ -98,8 +101,6 @@ public class SpawnManager : MonoBehaviour
     private GameObject cubePrefab;
     [SerializeField]
     private GameObject blockPrefab;
-    [SerializeField]
-    private float torqueStrength = 5;
 
     private BlockData[] blockDatas = new BlockData[] {
         new ITypeBlockData(),
@@ -114,7 +115,7 @@ public class SpawnManager : MonoBehaviour
     private Bounds cameraBounds;
 
     // Start is called before the first frame update
-    void Start()
+    protected void Start()
     {
         Debug.Assert(cubePrefab);
         Debug.Assert(blockPrefab);
@@ -122,25 +123,16 @@ public class SpawnManager : MonoBehaviour
 
         cubeSize = cubePrefab.GetComponent<Renderer>().bounds.size;
         cameraBounds = this.GetCameraBounds();
-
-        InvokeRepeating("SpawnBlock", 0, 2);
     }
 
-    void SpawnBlock()
+    protected GameObject BuildBlock()
     {
         int index = Random.Range(0, this.blockDatas.Length);
         var blockData = this.blockDatas[index];
         Debug.Assert(blockData.Column * blockData.Row == blockData.Cells.Length);
-
-        this.BuildBlock(blockData);
-    }
-
-    void BuildBlock(BlockData blockData)
-    {
         Debug.Assert(blockData.Cells.Length > 0);
 
         var block = Instantiate(blockPrefab, this.transform);
-        block.GetComponent<Rigidbody>().AddTorque(Vector3.forward * torqueStrength);
 
         var cubeWidth = this.cubeSize.x;
         var cubeHeight = this.cubeSize.y;
@@ -172,6 +164,8 @@ public class SpawnManager : MonoBehaviour
                 }
             }
         }
+
+        return block;
     }
 
     Bounds GetCameraBounds()
