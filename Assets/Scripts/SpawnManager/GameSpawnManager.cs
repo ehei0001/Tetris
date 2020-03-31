@@ -30,6 +30,11 @@ public class GameSpawnManager : SpawnManager
 
                 this.isCreating = false;
             }
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                this.BuildBlock(this.transform.position);
+            }
         }
     }
 }

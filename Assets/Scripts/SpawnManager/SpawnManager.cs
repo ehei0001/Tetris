@@ -143,7 +143,6 @@ public class SpawnManager : MonoBehaviour
 
             if (gameBlock)
             {
-                gameBlock.CellOffsets = blockOffset.cellOffsets;
                 gameBlock.CubeSize = this.cubeSize;
             }
         }

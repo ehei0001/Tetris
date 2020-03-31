@@ -4,31 +4,13 @@ using UnityEngine;
 
 public class GameBlock : MonoBehaviour
 {
-    public Vector3[] CellOffsets  
-    { 
-        set 
-        {
-            this.cellOffsets = new Vector3[value.Length];
-            value.CopyTo(this.cellOffsets, 0); 
-        } 
-    }
+    public int freezeSeconds = 2;
 
     public Vector3 CubeSize { set { this.cubeSize = value; } }
 
     private string lastCollisionTag;
-    private Side side = Side.East;
-    private Vector3[] cellOffsets;
     private Vector3 cubeSize;
-
-    enum Side 
-    {
-        North,
-        East,
-        South,
-        West,
-        Max,
-    }
-
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -73,15 +55,8 @@ public class GameBlock : MonoBehaviour
 
     void Rotate()
     {
-        // side update for next direction
-        {
-            this.side += 1;
-
-            if (this.side == Side.Max)
-            {
-                this.side = Side.North;
-            }
-        }
+        var angles = this.transform.eulerAngles;
+        this.transform.eulerAngles = new Vector3(angles.x, angles.y, angles.z + 90);
     }
 
     void MoveLeft()
@@ -105,12 +80,8 @@ public class GameBlock : MonoBehaviour
         if(!this.GetComponent<Rigidbody>().isKinematic)
         {
             var offset = this.cubeSize.y;
-
-            for (var i = 0; i < this.transform.childCount; ++i)
-            {
-                var transform = this.transform.GetChild(i);
-                transform.position += new Vector3(0, -offset);
-            }
+            var position = this.transform.position;
+            this.transform.position = new Vector3(position.x, position.y - offset, position.z);
         }
     }
 
@@ -118,11 +89,7 @@ public class GameBlock : MonoBehaviour
     {
         var direction = (isRight ? 1 : -1);
         var offset = this.cubeSize.x * direction;
-
-        for (var i = 0; i < this.transform.childCount; ++i)
-        {
-            var transform = this.transform.GetChild(i);
-            transform.position += new Vector3(offset, 0);
-        }
+        var position = this.transform.position;
+        this.transform.position = new Vector3(position.x + offset, position.y, position.z);
     }
 }
