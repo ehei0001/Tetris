@@ -97,10 +97,9 @@ class ZTypeBlockData : BlockData
 
 public class SpawnManager : MonoBehaviour
 {
-    [SerializeField]
-    private GameObject cubePrefab;
-    [SerializeField]
-    private GameObject blockPrefab;
+    public GameObject cubePrefab;
+    public GameObject blockPrefab;
+    public Vector3 cubeSize = new Vector3(10, 10, 10);
 
     private BlockData[] blockDatas = new BlockData[] {
         new ITypeBlockData(),
@@ -111,7 +110,6 @@ public class SpawnManager : MonoBehaviour
         new TTypeBlockData(),
         new ZTypeBlockData(),
     };
-    private Vector3 cubeSize;
     private Bounds cameraBounds;
 
     // Start is called before the first frame update
@@ -120,9 +118,10 @@ public class SpawnManager : MonoBehaviour
         Debug.Assert(cubePrefab);
         Debug.Assert(blockPrefab);
         Debug.Assert(this.blockDatas.Length > 0);
+        Debug.Assert(this.cubeSize.magnitude > 0);
 
-        cubeSize = cubePrefab.GetComponent<Renderer>().bounds.size;
-        cameraBounds = this.GetCameraBounds();
+        cubePrefab.transform.localScale = this.cubeSize;
+        this.cameraBounds = this.GetCameraBounds();
     }
 
     protected GameObject BuildBlock(Vector3 position)
@@ -132,8 +131,17 @@ public class SpawnManager : MonoBehaviour
         Debug.Assert(blockData.Column * blockData.Row == blockData.Cells.Length);
         Debug.Assert(blockData.Cells.Length > 0);
 
-        var block = Instantiate(blockPrefab, position, Quaternion.identity);
+        var blockGameObject = Instantiate(blockPrefab, position, Quaternion.identity);
 
+        {
+            var gameBlock = blockGameObject.GetComponent<GameBlock>();
+
+            if (gameBlock)
+            {
+                gameBlock.SetData(blockData.Row, blockData.Column, blockData.Cells, this.cubeSize);
+            }
+        }
+        
         var cubeWidth = this.cubeSize.x;
         var cubeHeight = this.cubeSize.y;
         Debug.Assert(cubeWidth > 0 && cubeHeight > 0);
@@ -158,14 +166,14 @@ public class SpawnManager : MonoBehaviour
                     var cellX = x + cubeWidth * column;
                     var cellY = y + cubeHeight * row;
                     var cell = Instantiate(cubePrefab, Vector3.zero, cubePrefab.transform.rotation);
-                    cell.transform.parent = block.transform;
+                    cell.transform.parent = blockGameObject.transform;
                     cell.transform.localPosition = new Vector3(cellX, cellY);
                     cell.GetComponent<Renderer>().sharedMaterial = material;
                 }
             }
         }
 
-        return block;
+        return blockGameObject;
     }
 
     Bounds GetCameraBounds()

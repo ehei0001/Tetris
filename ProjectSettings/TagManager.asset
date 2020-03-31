@@ -4,7 +4,10 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Wall
+  - Floor
+  - Cell
+  - Left Wall
+  - Right Wall
   layers:
   - Default
   - TransparentFX

@@ -4,14 +4,13 @@ using UnityEngine;
 
 public class TitleSpawnManager : SpawnManager
 {
-    [SerializeField]
-    private float torqueStrength = 5;
-    [SerializeField]
-    GameObject canvas;
+    public float torqueStrength = 5;
+    public GameObject canvas;
+    public int removingSeconds = 10;
 
     private float planeDistance;
 
-    private new void Start()
+    new void Start()
     {
         base.Start();
 
@@ -28,7 +27,10 @@ public class TitleSpawnManager : SpawnManager
         var x = Random.Range(left.x, right.x);
 
         var block = this.BuildBlock(new Vector3(x, position.y, position.z));
+        Destroy(block, this.removingSeconds);
+
         var rigidBody = block.GetComponent<Rigidbody>();
+        rigidBody.isKinematic = false;
         rigidBody.useGravity = true;
         rigidBody.AddTorque(Vector3.forward * this.torqueStrength, ForceMode.Impulse);
     }

@@ -4,18 +4,14 @@ using UnityEngine;
 
 public class Stage : MonoBehaviour
 {
-    [SerializeField]
-    private int floorCubeCount = 12;
-    [SerializeField]
-    private int obstacleLineCount = 0;
-    [SerializeField]
-    private GameObject leftWall;
-    [SerializeField]
-    private GameObject rightWall;
-    [SerializeField]
-    private GameObject floor;
-    [SerializeField]
-    private GameObject cubePrefab;
+    public int floorCubeCount = 12;
+    public int obstacleLineCount = 0;
+    public GameObject leftWall;
+    public GameObject rightWall;
+    public GameObject floor;
+    public GameObject cubePrefab;
+    public GameObject spawnManager;
+
     private readonly string[] materialNames = {
         "ITypeBlockData",
         "JTypeBlockData",
@@ -36,6 +32,8 @@ public class Stage : MonoBehaviour
     {
         var cubeSize = this.cubePrefab.GetComponent<Renderer>().bounds.size;
         var right = this.rightWall.transform.position.x - this.rightWall.GetComponent<Renderer>().bounds.size.x / 2;
+        var leftWallSize = this.leftWall.GetComponent<Renderer>().bounds.size;
+        var left = this.leftWall.transform.position.x + leftWallSize.x / 2;
 
         // obstacles create at random location
         {
@@ -57,7 +55,6 @@ public class Stage : MonoBehaviour
         // left wall position relocate
         {
             var transform = this.leftWall.transform;
-            var left = transform.position.x + this.leftWall.GetComponent<Renderer>().bounds.size.x / 2;
             var floorWidth = cubeSize.x * this.floorCubeCount;
 
             var rightWallPosition = this.rightWall.transform.position;
@@ -69,12 +66,22 @@ public class Stage : MonoBehaviour
 
         // floor position relocate
         {
-            var bottom = this.leftWall.transform.position.y - this.leftWall.GetComponent<Renderer>().bounds.size.y / 2;
+            var bottom = this.leftWall.transform.position.y - leftWallSize.y / 2;
             var floorHalfHeight = this.floor.GetComponent<Renderer>().bounds.size.y / 2;
             var y = bottom - floorHalfHeight;
 
             var position = this.floor.transform.position;
             this.floor.transform.position = new Vector3(position.x, y, position.z);
+        }
+
+        // Spawn Manager reloate
+        {
+            var transform = this.spawnManager.transform;
+            var position = transform.position;
+            var x = left + (right - left) / 2;
+
+            this.spawnManager.transform.position = new Vector3(x, position.y, position.z);
+            this.spawnManager.GetComponent<GameSpawnManager>().IsReady = true;
         }
     }
 }

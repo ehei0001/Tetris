@@ -642,7 +642,7 @@ Transform:
   m_GameObject: {fileID: 466879826}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 60.9, z: -403.28}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -663,8 +663,10 @@ MonoBehaviour:
     type: 3}
   blockPrefab: {fileID: 6053472703806854893, guid: 2b7c21cc61f54f84eb83e169c762b72c,
     type: 3}
+  cubeSize: {x: 10, y: 10, z: 10}
   torqueStrength: 5
   canvas: {fileID: 1393862283}
+  removingSeconds: 10
 --- !u!1 &627435945
 GameObject:
   m_ObjectHideFlags: 0
