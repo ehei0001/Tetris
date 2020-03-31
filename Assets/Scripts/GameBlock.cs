@@ -4,12 +4,21 @@ using UnityEngine;
 
 public class GameBlock : MonoBehaviour
 {
-    private int row;
-    private int column;
-    private int[] cells;
-    private Vector3 cubeSize;
+    public Vector3[] CellOffsets  
+    { 
+        set 
+        {
+            this.cellOffsets = new Vector3[value.Length];
+            value.CopyTo(this.cellOffsets, 0); 
+        } 
+    }
+
+    public Vector3 CubeSize { set { this.cubeSize = value; } }
+
     private string lastCollisionTag;
     private Side side = Side.East;
+    private Vector3[] cellOffsets;
+    private Vector3 cubeSize;
 
     enum Side 
     {
@@ -18,15 +27,6 @@ public class GameBlock : MonoBehaviour
         South,
         West,
         Max,
-    }
-
-
-    public void SetData(int row, int column, int[] cells, Vector3 cubeSize)
-    {
-        this.row = row;
-        this.column = column;
-        this.cubeSize = cubeSize;
-        this.cells = cells;
     }
 
     // Start is called before the first frame update

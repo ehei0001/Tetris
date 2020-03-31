@@ -57,8 +57,8 @@ class OTypeBlockData : BlockData
     public override int[] Cells { get { return cells; } }
 
     private int[] cells = new int[] {
-        1, 1,
-        1, 1,
+        1,1,
+        1,1,
     };
 }
 
@@ -110,6 +110,12 @@ public class SpawnManager : MonoBehaviour
         new TTypeBlockData(),
         new ZTypeBlockData(),
     };
+    struct BlockOffset
+    {
+        public string name;
+        public Vector3[] cellOffsets;
+    }
+    private BlockOffset[] blockOffsets;
     private Bounds cameraBounds;
 
     // Start is called before the first frame update
@@ -120,17 +126,16 @@ public class SpawnManager : MonoBehaviour
         Debug.Assert(this.blockDatas.Length > 0);
         Debug.Assert(this.cubeSize.magnitude > 0);
 
+        this.blockOffsets = this.UpdateBlockData(this.cubeSize);
+
         cubePrefab.transform.localScale = this.cubeSize;
         this.cameraBounds = this.GetCameraBounds();
     }
 
     protected GameObject BuildBlock(Vector3 position)
     {
-        int index = Random.Range(0, this.blockDatas.Length);
-        var blockData = this.blockDatas[index];
-        Debug.Assert(blockData.Column * blockData.Row == blockData.Cells.Length);
-        Debug.Assert(blockData.Cells.Length > 0);
-
+        int index = Random.Range(0, this.blockOffsets.Length);
+        var blockOffset = this.blockOffsets[index];
         var blockGameObject = Instantiate(blockPrefab, position, Quaternion.identity);
 
         {
@@ -138,7 +143,8 @@ public class SpawnManager : MonoBehaviour
 
             if (gameBlock)
             {
-                gameBlock.SetData(blockData.Row, blockData.Column, blockData.Cells, this.cubeSize);
+                gameBlock.CellOffsets = blockOffset.cellOffsets;
+                gameBlock.CubeSize = this.cubeSize;
             }
         }
         
@@ -146,31 +152,15 @@ public class SpawnManager : MonoBehaviour
         var cubeHeight = this.cubeSize.y;
         Debug.Assert(cubeWidth > 0 && cubeHeight > 0);
 
-        var left = Random.Range(this.cameraBounds.min.x, this.cameraBounds.max.x);
-        var x = (cubeWidth * blockData.Column) / -2;
-        var y = (cubeHeight * blockData.Row) / -2;
-        var materialName = blockData.GetType().Name;
-        var material = Resources.Load<Material>("Materials/" + materialName);
-        Debug.Assert(material, materialName + " is not found");
+        var material = Resources.Load<Material>("Materials/" + blockOffset.name);
+        Debug.Assert(material, blockOffset.name + " is not found");
 
-        for(int row = 0;row < blockData.Row; ++row)
+        foreach(var offset in blockOffset.cellOffsets)
         {
-            for(int column = 0; column < blockData.Column; ++column)
-            {
-                var cellIndex = row * blockData.Column + column;
-                Debug.Assert(blockData.Cells.Length > cellIndex, blockData.GetType().Name + " has invalid data");
-                var isCreating = blockData.Cells[cellIndex];
-
-                if(isCreating > 0)
-                {
-                    var cellX = x + cubeWidth * column;
-                    var cellY = y + cubeHeight * row;
-                    var cell = Instantiate(cubePrefab, Vector3.zero, cubePrefab.transform.rotation);
-                    cell.transform.parent = blockGameObject.transform;
-                    cell.transform.localPosition = new Vector3(cellX, cellY);
-                    cell.GetComponent<Renderer>().sharedMaterial = material;
-                }
-            }
+            var cell = Instantiate(cubePrefab, Vector3.zero, cubePrefab.transform.rotation);
+            cell.transform.parent = blockGameObject.transform;
+            cell.transform.localPosition = offset;
+            cell.GetComponent<Renderer>().sharedMaterial = material;
         }
 
         return blockGameObject;
@@ -199,5 +189,68 @@ public class SpawnManager : MonoBehaviour
         var center = lowerLeft + size / 2;
 
         return new Bounds(center, size);
+    }
+
+    BlockOffset[] UpdateBlockData(Vector3 cubeSize)
+    {
+        var twoByTwoOffsets = new Vector3[] {
+            new Vector3(-1, +1), new Vector3(+0, +1),
+            new Vector3(-1, +0), new Vector3(+0, -0),
+        };
+        var threeByThreeOffsets = new Vector3[] {
+            new Vector3(-1, +1), new Vector3(+0, +1), new Vector3(+1, +1),
+            new Vector3(-1, +0), new Vector3(+0, +0), new Vector3(+1, +0),
+            new Vector3(-1, -1), new Vector3(+0, -1), new Vector3(+1, -1),
+        };
+        var fourByFourOffsets = new Vector3[] {
+            new Vector3(-1, +1), new Vector3(+0, +1), new Vector3(+1, +1), new Vector3(+2, +1),
+            new Vector3(-1, +0), new Vector3(+0, +0), new Vector3(+1, +0), new Vector3(+2, +0),
+            new Vector3(-1, -1), new Vector3(+0, -1), new Vector3(+1, -1), new Vector3(+2, -1),
+            new Vector3(-1, -2), new Vector3(+0, -2), new Vector3(+1, -2), new Vector3(+2, -2),
+        };
+        var blockOffsets = new List<BlockOffset>();
+
+        foreach (var blockData in this.blockDatas)
+        {
+            Debug.Assert(blockData.Row == blockData.Column);
+            Vector3[] offsets;
+
+            if (blockData.Row == 2)
+            {
+                offsets = twoByTwoOffsets;
+            }
+            else if(blockData.Row == 3)
+            {
+                offsets = threeByThreeOffsets;
+            }
+            else
+            {
+                Debug.Assert(blockData.Row == 4);
+
+                offsets = fourByFourOffsets;
+            }
+
+            Debug.Assert(offsets.Length == blockData.Cells.Length);
+            var cellOffsets = new List<Vector3>();
+
+            for(var i = 0; i < blockData.Cells.Length; ++i)
+            {
+                if (blockData.Cells[i] == 1)
+                {
+                    var offset = offsets[i];
+                    offset = new Vector3(offset.x * this.cubeSize.x, offset.y * this.cubeSize.y);
+                    cellOffsets.Add(offset);
+                }
+            }
+
+            Debug.Assert(cellOffsets.Count > 0);
+
+            var blockOffset = new BlockOffset();
+            blockOffset.name = blockData.GetType().Name;
+            blockOffset.cellOffsets = cellOffsets.ToArray();
+            blockOffsets.Add(blockOffset);
+        }
+
+        return blockOffsets.ToArray();
     }
 }
