@@ -11,6 +11,11 @@ public class GameSpawnManager : SpawnManager
     private bool isReady = false;
     private bool isCreating = false;
 
+    public void PutBlock()
+    {
+        this.BuildBlock(this.transform.position);
+    }
+
     // Start is called before the first frame update
     new void Start()
     {
@@ -26,14 +31,9 @@ public class GameSpawnManager : SpawnManager
         {
             if (this.isCreating)
             {
-                this.BuildBlock(this.transform.position);
+                PutBlock();
 
                 this.isCreating = false;
-            }
-
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                this.BuildBlock(this.transform.position);
             }
         }
     }

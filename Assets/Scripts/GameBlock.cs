@@ -4,23 +4,63 @@ using UnityEngine;
 
 public class GameBlock : MonoBehaviour
 {
-    public int freezeSeconds = 2;
+    public float freezeTime = 2;
+    public float autoDownTime = 1;
 
     public Vector3 CubeSize { set { this.cubeSize = value; } }
 
-    private string lastCollisionTag;
     private Vector3 cubeSize;
+    private Vector3 lastPosition = new Vector3();
+    private float freezingElaspedTime;
+    private float autoDownElaspedTime;
+    private Stage stage;
     
     // Start is called before the first frame update
     void Start()
     {
-        
+        Debug.Assert(this.freezeTime > this.autoDownTime);
+
+        {
+            var gameObject = GameObject.Find("Stage");
+            this.stage = gameObject.GetComponent<Stage>();
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
         // it position is unchanged during n seconds, it'll freeze
+        //if(this.lastPosition == this.transform.position)
+        //{
+        //    this.freezingElaspedTime += Time.deltaTime;
+
+        //    if(this.freezeTime < freezingElaspedTime)
+        //    { 
+        //        this.stage.FreezeBlock(this.transform);
+                
+        //        // next block ready
+        //        {
+        //            var gameObject = GameObject.Find("Spawn Manager");
+        //            Debug.Assert(gameObject);
+        //            gameObject.GetComponent<GameSpawnManager>().PutBlock();
+        //        }
+
+        //        Destroy(this.gameObject, 0.1f);
+        //    }
+        //} else
+        //{
+        //    this.freezingElaspedTime = 0;
+        //    this.lastPosition = this.transform.position;
+        //}
+
+        //if(this.autoDownElaspedTime > this.autoDownTime)
+        //{
+        //    this.MoveDown();
+        //    this.autoDownElaspedTime = 0;
+        //} else
+        //{
+        //    this.autoDownElaspedTime += Time.deltaTime;
+        //}
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
@@ -37,51 +77,35 @@ public class GameBlock : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        this.lastCollisionTag = collision.gameObject.tag;
-        Debug.Log("OnCollisionEnter: " + this.lastCollisionTag);
-
-        if(collision.gameObject.tag == "Floor" || collision.gameObject.tag == "Cell")
-        {
-            this.GetComponent<Rigidbody>().isKinematic = true;
-        }
-    }
-
-    private void OnCollisionExit(Collision collision)
-    {
-        this.lastCollisionTag = "";
-    }
-
     void Rotate()
     {
         var angles = this.transform.eulerAngles;
-        this.transform.eulerAngles = new Vector3(angles.x, angles.y, angles.z + 90);
+        this.transform.eulerAngles += new Vector3(0, 0, 90);
+
+        if (this.stage.IsCollideBlock(this.transform))
+        {
+            this.transform.eulerAngles -= new Vector3(0, 0, -90);
+        }
     }
 
     void MoveLeft()
     {
-        if(this.lastCollisionTag != "Left Wall")
-        {
-            this.MoveSide(false);
-        }
+        this.MoveSide(false);
     }
 
     void MoveRight()
     {
-        if(this.lastCollisionTag != "Right Wall")
-        {
-            this.MoveSide(true);
-        }
+        this.MoveSide(true);
     }
 
     void MoveDown()
     {
-        if(!this.GetComponent<Rigidbody>().isKinematic)
+        var offset = this.cubeSize.y;
+        this.transform.position -= new Vector3(0, offset);
+
+        if (this.stage.IsCollideBlock(this.transform))
         {
-            var offset = this.cubeSize.y;
-            var position = this.transform.position;
-            this.transform.position = new Vector3(position.x, position.y - offset, position.z);
+            this.transform.position += new Vector3(0, offset);
         }
     }
 
@@ -89,7 +113,11 @@ public class GameBlock : MonoBehaviour
     {
         var direction = (isRight ? 1 : -1);
         var offset = this.cubeSize.x * direction;
-        var position = this.transform.position;
-        this.transform.position = new Vector3(position.x + offset, position.y, position.z);
+        this.transform.position += new Vector3(offset, 0);
+
+        if (this.stage.IsCollideBlock(this.transform))
+        {
+            this.transform.position -= new Vector3(offset, 0);
+        }
     }
 }
