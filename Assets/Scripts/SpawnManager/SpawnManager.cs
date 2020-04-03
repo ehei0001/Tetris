@@ -102,13 +102,13 @@ public class SpawnManager : MonoBehaviour
     public Vector3 cubeSize = new Vector3(10, 10, 10);
 
     private BlockData[] blockDatas = new BlockData[] {
-        //new ITypeBlockData(),
-        //new JTypeBlockData(),
-        //new LTypeBlockData(),
+        new ITypeBlockData(),
+        new JTypeBlockData(),
+        new LTypeBlockData(),
         new OTypeBlockData(),
-        //new STypeBlockData(),
-        //new TTypeBlockData(),
-        //new ZTypeBlockData(),
+        new STypeBlockData(),
+        new TTypeBlockData(),
+        new ZTypeBlockData(),
     };
     struct BlockOffset
     {
