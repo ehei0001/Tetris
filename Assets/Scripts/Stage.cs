@@ -134,7 +134,7 @@ public class Stage : MonoBehaviour
         {
             var position = this.rightWall.transform.position;
             var x = this.leftWall.transform.position.x + leftWallSize.x / 2 + cubeWidth / 2;
-            var y = this.floor.transform.position.y + floorHalfHeight + cubeHeight / 2;
+            var y = this.floor.transform.position.y + floorHalfHeight + cubeHeight;
             var z = position.z;
 
             this.anchorPoint = new Vector3(x, y, z);

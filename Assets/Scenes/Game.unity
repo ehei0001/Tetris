@@ -805,7 +805,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   floorCubeCount: 12
-  obstacleRowCount: 1
+  obstacleRowCount: 0
   leftWall: {fileID: 2089361147}
   rightWall: {fileID: 2138577778}
   floor: {fileID: 1062010158}
