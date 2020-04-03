@@ -14,6 +14,7 @@ public class GameBlock : MonoBehaviour
     private float freezingElaspedTime;
     private float autoDownElaspedTime;
     private Stage stage;
+    private bool isForcedDropping = false;
     
     // Start is called before the first frame update
     void Start()
@@ -30,40 +31,51 @@ public class GameBlock : MonoBehaviour
     void Update()
     {
         // it position is unchanged during n seconds, it'll freeze
-        //if(this.lastPosition == this.transform.position)
-        //{
-        //    this.freezingElaspedTime += Time.deltaTime;
+        if (this.lastPosition == this.transform.position)
+        {
+            this.freezingElaspedTime += Time.deltaTime;
 
-        //    if(this.freezeTime < freezingElaspedTime)
-        //    { 
-        //        this.stage.FreezeBlock(this.transform);
-                
-        //        // next block ready
-        //        {
-        //            var gameObject = GameObject.Find("Spawn Manager");
-        //            Debug.Assert(gameObject);
-        //            gameObject.GetComponent<GameSpawnManager>().PutBlock();
-        //        }
+            if (this.freezeTime < freezingElaspedTime)
+            {
+                this.stage.FreezeBlock(this.transform);
 
-        //        Destroy(this.gameObject, 0.1f);
-        //    }
-        //} else
-        //{
-        //    this.freezingElaspedTime = 0;
-        //    this.lastPosition = this.transform.position;
-        //}
+                // next block ready
+                {
+                    var gameObject = GameObject.Find("Spawn Manager");
+                    Debug.Assert(gameObject);
+                    gameObject.GetComponent<GameSpawnManager>().PutBlock();
+                }
 
-        //if(this.autoDownElaspedTime > this.autoDownTime)
-        //{
-        //    this.MoveDown();
-        //    this.autoDownElaspedTime = 0;
-        //} else
-        //{
-        //    this.autoDownElaspedTime += Time.deltaTime;
-        //}
+                Destroy(this.gameObject, 0.1f);
+            }
+        }
+        else
+        {
+            this.freezingElaspedTime = 0;
+            this.lastPosition = this.transform.position;
+        }
+
+        if (this.isForcedDropping)
+        {
+            this.MoveDown();
+        }
+        else
+        {
+            if (this.autoDownElaspedTime > this.autoDownTime)
+            {
+                this.MoveDown();
+                this.autoDownElaspedTime = 0;
+            }
+            else
+            {
+                this.autoDownElaspedTime += Time.deltaTime;
+            }
+        }
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
+            //var offset = -this.cubeSize.y;
+            //this.transform.position -= new Vector3(0, offset);
             this.Rotate();
         } else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
@@ -74,6 +86,9 @@ public class GameBlock : MonoBehaviour
         } else if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             this.MoveRight();
+        } else if (Input.GetKeyDown(KeyCode.Space))
+        {
+            this.isForcedDropping = true;
         }
     }
 
@@ -84,7 +99,7 @@ public class GameBlock : MonoBehaviour
 
         if (this.stage.IsCollideBlock(this.transform))
         {
-            this.transform.eulerAngles -= new Vector3(0, 0, -90);
+            this.transform.eulerAngles += new Vector3(0, 0, -90);
         }
     }
 

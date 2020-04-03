@@ -30,7 +30,7 @@ public class Stage : MonoBehaviour
         var updatedRows = new List<int>();
 
         // detach all children and atttach to stage
-        for(var i = 0; i < blockTransform.childCount; ++i)
+        for (var i = blockTransform.childCount - 1; i >= 0; --i)
         {
             var childTransform = blockTransform.GetChild(i);
             var position = childTransform.position;
@@ -145,10 +145,8 @@ public class Stage : MonoBehaviour
             var transform = this.spawnManager.transform;
             var bias = 3;
             var x = left + (right - left) / 2 - cubeWidth / 2 + bias;
-            var cubeCount = (transform.position.y - this.floor.transform.position.y) / cubeHeight;
-            var y = this.anchorPoint.y + (int)cubeCount * cubeHeight;
 
-            transform.position = new Vector3(x, y, this.rightWall.transform.position.z);
+            transform.position = new Vector3(x, transform.position.y, this.rightWall.transform.position.z);
             this.spawnManager.GetComponent<GameSpawnManager>().IsReady = true;
         }
 
@@ -251,7 +249,10 @@ public class Stage : MonoBehaviour
                 {
                     foreach (var transform in cellTransformsAtRow)
                     {
-                        transform.position -= new Vector3(0, offset, 0);
+                        if (transform)
+                        {
+                            transform.position += new Vector3(0, offset, 0);
+                        }
                     }
                 }
             }
