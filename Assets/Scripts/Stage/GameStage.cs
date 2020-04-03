@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -28,11 +29,11 @@ public class GameStage : MonoBehaviour
     private List<Transform[]> cellTransforms = new List<Transform[]>();
     private Vector3 anchorPoint;
     private Vector3 cubeSize;
-    private int stateCount = 1;
+    private int stateCount = 0;
 
     public void FreezeBlock(Transform blockTransform)
     {
-        var updatedRows = new List<int>();
+        var updatedRows = new HashSet<int>();
 
         // detach all children and atttach to stage
         for (var i = blockTransform.childCount - 1; i >= 0; --i)
@@ -59,9 +60,9 @@ public class GameStage : MonoBehaviour
 
         if (filledRows.Count > 0)
         {
-            var score = Mathf.Pow(filledRows.Count, 2);
-
-            this.scoreText.text = "x" + score.ToString("x").ToLower();
+            var score = (int)Mathf.Pow(filledRows.Count, 2);
+            
+            this.scoreText.text = Convert.ToString(score, 16).ToLower();
 
             var remainedLine = int.Parse(this.remaingLineText.text);
             remainedLine -= filledRows.Count;
@@ -88,7 +89,7 @@ public class GameStage : MonoBehaviour
             {
                 return true;
             } 
-            else if(cellIndex.y < 0)
+            else if(cellIndex.y <= 0)
             {
                 return true;
             } 
@@ -160,10 +161,12 @@ public class GameStage : MonoBehaviour
         {
             var position = this.rightWall.transform.position;
             var x = this.leftWall.transform.position.x + leftWallSize.x / 2 + cubeWidth / 2;
-            var y = this.floor.transform.position.y + floorHalfHeight + cubeHeight;
+            var y = this.floor.transform.position.y + floorHalfHeight - cubeHeight / 2;
             var z = position.z;
 
             this.anchorPoint = new Vector3(x, y, z);
+
+            Debug.Log("anchor point:" + this.anchorPoint);
         }
 
         // Spawn Manager reloate
@@ -185,7 +188,7 @@ public class GameStage : MonoBehaviour
             {
                 for (int column = 0; column < this.floorCubeCount; ++column)
                 {
-                    var materialIndex = Random.Range(0, this.materialNames.Length);
+                    var materialIndex = UnityEngine.Random.Range(0, this.materialNames.Length);
                     var materialName = this.materialNames[materialIndex];
                     var material = Resources.Load<Material>("Materials/" + materialName);
 
@@ -224,7 +227,7 @@ public class GameStage : MonoBehaviour
         }
     }
 
-    List<int> GetFilledRows(List<int> updatedRows)
+    List<int> GetFilledRows(HashSet<int> updatedRows)
     {
         var filledLines = new List<int>();
 
@@ -271,10 +274,10 @@ public class GameStage : MonoBehaviour
                 {
                     foreach (var transform in cellTransformsAtRow)
                     {
-                        transform.GetComponent<BoxCollider>().enabled = true;
-                        transform.GetComponent<Rigidbody>().AddForce(Vector3.right * 10, ForceMode.Impulse);
+                        //transform.GetComponent<BoxCollider>().enabled = true;
+                        //transform.GetComponent<Rigidbody>().AddForce(Vector3.right * 100, ForceMode.Impulse);
 
-                        Destroy(transform.gameObject, 1);
+                        Destroy(transform.gameObject);
                     }
 
                     offset -= this.cubeSize.y;

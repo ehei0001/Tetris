@@ -30,6 +30,8 @@ public class GameBlock : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Debug.Assert(this.enabled);
+
         // it position is unchanged during n seconds, it'll freeze
         if (this.lastPosition == this.transform.position)
         {
@@ -46,7 +48,9 @@ public class GameBlock : MonoBehaviour
                     gameObject.GetComponent<GameSpawnManager>().PutBlock();
                 }
 
-                Destroy(this.gameObject, 0.1f);
+                this.enabled = false;
+
+                Destroy(this.gameObject);
             }
         }
         else

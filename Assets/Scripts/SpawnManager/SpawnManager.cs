@@ -105,9 +105,9 @@ public class SpawnManager : MonoBehaviour
         //new ITypeBlockData(),
         //new JTypeBlockData(),
         //new LTypeBlockData(),
-        //new OTypeBlockData(),
-        new STypeBlockData(),
-        new TTypeBlockData(),
+        new OTypeBlockData(),
+        //new STypeBlockData(),
+        //new TTypeBlockData(),
         //new ZTypeBlockData(),
     };
     struct BlockOffset
