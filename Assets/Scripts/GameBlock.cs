@@ -13,7 +13,7 @@ public class GameBlock : MonoBehaviour
     private Vector3 lastPosition = new Vector3();
     private float freezingElaspedTime;
     private float autoDownElaspedTime;
-    private Stage stage;
+    private GameStage stage;
     private bool isForcedDropping = false;
     
     // Start is called before the first frame update
@@ -23,7 +23,7 @@ public class GameBlock : MonoBehaviour
 
         {
             var gameObject = GameObject.Find("Stage");
-            this.stage = gameObject.GetComponent<Stage>();
+            this.stage = gameObject.GetComponent<GameStage>();
         }
     }
 

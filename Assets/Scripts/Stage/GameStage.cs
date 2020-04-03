@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
-public class Stage : MonoBehaviour
+public class GameStage : MonoBehaviour
 {
+    public int fillingLineCount = 5;
     public int floorCubeCount = 12;
     public int obstacleRowCount = 0;
     public GameObject leftWall;
@@ -11,6 +13,8 @@ public class Stage : MonoBehaviour
     public GameObject floor;
     public GameObject cubePrefab;
     public GameObject spawnManager;
+    public TextMeshProUGUI remaingLineText;
+    public TextMeshProUGUI scoreText;
 
     private readonly string[] materialNames = {
         "ITypeBlockData",
@@ -24,6 +28,7 @@ public class Stage : MonoBehaviour
     private List<Transform[]> cellTransforms = new List<Transform[]>();
     private Vector3 anchorPoint;
     private Vector3 cubeSize;
+    private int stateCount = 1;
 
     public void FreezeBlock(Transform blockTransform)
     {
@@ -51,6 +56,25 @@ public class Stage : MonoBehaviour
         var filledRows = this.GetFilledRows(updatedRows);
 
         this.ClearRows(filledRows);
+
+        if (filledRows.Count > 0)
+        {
+            var score = Mathf.Pow(filledRows.Count, 2);
+
+            this.scoreText.text = "x" + score.ToString("x").ToLower();
+
+            var remainedLine = int.Parse(this.remaingLineText.text);
+            remainedLine -= filledRows.Count;
+
+            if(remainedLine > 0)
+            {
+                this.remaingLineText.text = remainedLine.ToString();
+            }
+            else
+            {
+                // TODO:stage clear guide
+            }
+        }
     }
 
     public bool IsCollideBlock(Transform transform)
@@ -63,10 +87,12 @@ public class Stage : MonoBehaviour
             if(cellIndex.x < 0 || cellIndex.x >= this.floorCubeCount)
             {
                 return true;
-            } else if(cellIndex.y < 0)
+            } 
+            else if(cellIndex.y < 0)
             {
                 return true;
-            } else if(cellIndex.y < this.cellTransforms.Count)
+            } 
+            else if(cellIndex.y < this.cellTransforms.Count)
             {
                 if(this.cellTransforms[cellIndex.y][cellIndex.x] != null)
                 {
@@ -182,6 +208,12 @@ public class Stage : MonoBehaviour
                 this.cellTransforms[cellIndex.y][cellIndex.x] = item.Value;
             }
         }
+
+        // remaining line update
+        {
+            var remaingLine = this.stateCount + this.fillingLineCount;
+            this.remaingLineText.text = remaingLine.ToString();
+        }
     }
 
     void ReserveCellMap(int maxRow)
@@ -239,7 +271,10 @@ public class Stage : MonoBehaviour
                 {
                     foreach (var transform in cellTransformsAtRow)
                     {
-                        Destroy(transform.gameObject, 0.1f);
+                        transform.GetComponent<BoxCollider>().enabled = true;
+                        transform.GetComponent<Rigidbody>().AddForce(Vector3.right * 10, ForceMode.Impulse);
+
+                        Destroy(transform.gameObject, 1);
                     }
 
                     offset -= this.cubeSize.y;
