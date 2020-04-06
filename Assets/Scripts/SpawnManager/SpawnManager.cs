@@ -2,104 +2,108 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-class BlockData
-{
-#if DEBUG
-    public BlockData()
-    {
-        Debug.Assert(this.Column == this.Row);
-        Debug.Assert(this.Column == Mathf.Sqrt(this.Cells.Length));
-    }
-#endif
-
-
-    public int Column { get { return (int)Mathf.Sqrt(this.Cells.Length); } }
-    public int Row { get { return this.Column; } }
-    public virtual int[] Cells { get; }
-}
-
-class ITypeBlockData : BlockData
-{
-    public override int[] Cells { get { return cells; } }
-
-    private int[] cells = new int[]{
-        0,0,0,0,
-        1,1,1,1,
-        0,0,0,0,
-        0,0,0,0,
-    };
-}
-
-class JTypeBlockData : BlockData
-{
-    public override int[] Cells { get { return cells; } }
-
-    private int[] cells = new int[] {
-        1,0,0,
-        1,1,1,
-        0,0,0,
-    };
-}
-
-class LTypeBlockData : BlockData
-{
-    public override int[] Cells { get { return cells; } }
-
-    private int[] cells = new int[] {
-        0,0,1,
-        1,1,1,
-        0,0,0,
-    };
-}
-
-class OTypeBlockData : BlockData
-{
-    public override int[] Cells { get { return cells; } }
-
-    private int[] cells = new int[] {
-        1,1,
-        1,1,
-    };
-}
-
-class STypeBlockData : BlockData
-{
-    public override int[] Cells { get { return cells; } }
-
-    private int[] cells = new int[] {
-        0,1,1,
-        1,1,0,
-        0,0,0,
-    };
-}
-
-class TTypeBlockData : BlockData
-{
-    public override int[] Cells { get { return cells; } }
-
-    private int[] cells = new int[] { 
-        0,1,0, 
-        1,1,1,
-        0,0,0,
-    };
-}
-
-class ZTypeBlockData : BlockData
-{
-    public override int[] Cells { get { return cells; } }
-
-    private int[] cells = new int[] {
-        1,1,0,
-        0,1,1,
-        0,0,0,
-    };
-}
 
 public class SpawnManager : MonoBehaviour
 {
     public GameObject cubePrefab;
     public GameObject blockPrefab;
     public Vector3 cubeSize = new Vector3(10, 10, 10);
+
+    protected struct BlockOffset
+    {
+        public string name;
+        public Vector3[] cellOffsets;
+    }
+    protected interface IBlockData
+    {
+        int Column { get; }
+        int Row { get; }
+        int[] Cells { get; }
+    }
+
+    class BlockData : IBlockData 
+    { 
+        public int Column { get { return (int)Mathf.Sqrt(this.Cells.Length); } }
+        public int Row { get { return this.Column; } }
+        public virtual int[] Cells { get; }
+    }
+
+    class ITypeBlockData : BlockData
+    {
+        public override int[] Cells { get { return cells; } }
+
+        private readonly int[] cells = new int[]{
+            0,0,0,0,
+            1,1,1,1,
+            0,0,0,0,
+            0,0,0,0,
+        };
+    }
+
+    class JTypeBlockData : BlockData
+    {
+        public override int[] Cells { get { return cells; } }
+
+        private readonly int[] cells = new int[] {
+            1,0,0,
+            1,1,1,
+            0,0,0,
+        };
+    }
+
+    class LTypeBlockData : BlockData
+    {
+        public override int[] Cells { get { return cells; } }
+
+        private readonly int[] cells = new int[] {
+            0,0,1,
+            1,1,1,
+            0,0,0,
+        };
+    }
+
+    class OTypeBlockData : BlockData
+    {
+        public override int[] Cells { get { return cells; } }
+
+        private readonly int[] cells = new int[] {
+            1,1,
+            1,1,
+        };
+    }
+
+    class STypeBlockData : BlockData
+    {
+        public override int[] Cells { get { return cells; } }
+
+        private readonly int[] cells = new int[] {
+            0,1,1,
+            1,1,0,
+            0,0,0,
+        };
+    }
+
+    class TTypeBlockData : BlockData
+    {
+        public override int[] Cells { get { return cells; } }
+
+        private readonly int[] cells = new int[] {
+            0,1,0,
+            1,1,1,
+            0,0,0,
+        };
+    }
+
+    class ZTypeBlockData : BlockData
+    {
+        public override int[] Cells { get { return cells; } }
+
+        private readonly int[] cells = new int[] {
+            1,1,0,
+            0,1,1,
+            0,0,0,
+        };
+    }
 
     private BlockData[] blockDatas = new BlockData[] {
         new ITypeBlockData(),
@@ -110,11 +114,6 @@ public class SpawnManager : MonoBehaviour
         new TTypeBlockData(),
         new ZTypeBlockData(),
     };
-    struct BlockOffset
-    {
-        public string name;
-        public Vector3[] cellOffsets;
-    }
     private BlockOffset[] blockOffsets;
     private Bounds cameraBounds;
 
@@ -165,91 +164,104 @@ public class SpawnManager : MonoBehaviour
         return blockGameObject;
     }
 
+    protected Vector3[] GetCubeOffsets(IBlockData blockData)
+    {
+        var rowCount = blockData.Row;
+        var columnCount = blockData.Column;
+        var rowOffset = rowCount / 2;
+        var columnOffset = columnCount / 2;
+        var offsets = new Vector3[blockData.Cells.Length];
+
+        for (var row = 0; row < rowCount; ++row)
+        {
+            for (var column = 0; column < columnCount; ++column)
+            {
+                var index = (rowCount - row - 1) * columnCount + column;
+                var offset = new Vector3(column - columnOffset, row - rowOffset);
+                offsets[index] = new Vector3(offset.x * this.cubeSize.x, offset.y * this.cubeSize.y);
+            }
+        }
+
+        var compactOffsets = new List<Vector3>();
+
+        for (var i = 0; i < blockData.Cells.Length; ++i)
+        {
+            if (blockData.Cells[i] == 1)
+            {
+                var offset = offsets[i];
+                compactOffsets.Add(offset);
+            }
+        }
+
+        return compactOffsets.ToArray();
+    }
+
+    protected void PutCubes(Transform parentTransform, Vector3[] cubeOffsets)
+    {   
+        foreach(var cubeOffset in cubeOffsets)
+        {
+            var index = Random.Range(0, this.blockDatas.Length);
+            var blockData = this.blockDatas[index];
+            var materialName = "Materials/" + blockData.GetType().Name;
+            var material = Resources.Load<Material>(materialName);
+            Debug.Assert(material, materialName + " is not found");
+
+            var cube = Instantiate(cubePrefab, Vector3.zero, cubePrefab.transform.rotation);
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = cubeOffset;
+            cube.GetComponent<Renderer>().sharedMaterial = material;
+        }
+    }
+
+
     Bounds GetCameraBounds()
     {
         // https://forum.unity.com/threads/calculating-world-position-of-screens-corners.9292/
         var camera = Camera.main;
         var canvas = GameObject.Find("Canvas");
-        var depth = (canvas.transform.position.z - camera.transform.position.z);
 
-        // Screens coordinate corner location
-        var upperLeftScreen = new Vector3(0, Screen.height, depth );
-        var upperRightScreen = new Vector3(Screen.width, Screen.height, depth);
-        var lowerLeftScreen = new Vector3(0, 0, depth);
-        var lowerRightScreen = new Vector3(Screen.width, 0, depth);
-    
-        //Corner locations in world coordinates
-        var upperLeft = camera.ScreenToWorldPoint(upperLeftScreen); 
-        var upperRight = camera.ScreenToWorldPoint(upperRightScreen);
-        var lowerLeft = camera.ScreenToWorldPoint(lowerLeftScreen);
-        var lowerRight = camera.ScreenToWorldPoint(lowerRightScreen);
+        if (canvas)
+        {
+            var depth = (canvas.transform.position.z - camera.transform.position.z);
 
-        var size = upperRight - lowerLeft;
-        var center = lowerLeft + size / 2;
+            // Screens coordinate corner location
+            var upperLeftScreen = new Vector3(0, Screen.height, depth);
+            var upperRightScreen = new Vector3(Screen.width, Screen.height, depth);
+            var lowerLeftScreen = new Vector3(0, 0, depth);
+            var lowerRightScreen = new Vector3(Screen.width, 0, depth);
 
-        return new Bounds(center, size);
+            //Corner locations in world coordinates
+            //var upperLeft = camera.ScreenToWorldPoint(upperLeftScreen);
+            var upperRight = camera.ScreenToWorldPoint(upperRightScreen);
+            var lowerLeft = camera.ScreenToWorldPoint(lowerLeftScreen);
+            //var lowerRight = camera.ScreenToWorldPoint(lowerRightScreen);
+
+            var size = upperRight - lowerLeft;
+            var center = lowerLeft + size / 2;
+
+            return new Bounds(center, size);
+        }
+        else
+        {
+            return new Bounds();
+        }
     }
 
     BlockOffset[] UpdateBlockData(Vector3 cubeSize)
     {
-        var twoByTwoOffsets = new Vector3[] {
-            new Vector3(-1, +1), new Vector3(+0, +1),
-            new Vector3(-1, +0), new Vector3(+0, -0),
-        };
-        var threeByThreeOffsets = new Vector3[] {
-            new Vector3(-1, +1), new Vector3(+0, +1), new Vector3(+1, +1),
-            new Vector3(-1, +0), new Vector3(+0, +0), new Vector3(+1, +0),
-            new Vector3(-1, -1), new Vector3(+0, -1), new Vector3(+1, -1),
-        };
-        var fourByFourOffsets = new Vector3[] {
-            new Vector3(-1, +1), new Vector3(+0, +1), new Vector3(+1, +1), new Vector3(+2, +1),
-            new Vector3(-1, +0), new Vector3(+0, +0), new Vector3(+1, +0), new Vector3(+2, +0),
-            new Vector3(-1, -1), new Vector3(+0, -1), new Vector3(+1, -1), new Vector3(+2, -1),
-            new Vector3(-1, -2), new Vector3(+0, -2), new Vector3(+1, -2), new Vector3(+2, -2),
-        };
-        var blockOffsets = new List<BlockOffset>();
+        var blockOffsets = new BlockOffset[this.blockDatas.Length];
 
-        foreach (var blockData in this.blockDatas)
+        for( var i = 0; i < this.blockDatas.Length; ++i)
         {
-            Debug.Assert(blockData.Row == blockData.Column);
-            Vector3[] offsets;
-
-            if (blockData.Row == 2)
+            var blockData = this.blockDatas[i];
+            var blockOffset = new BlockOffset
             {
-                offsets = twoByTwoOffsets;
-            }
-            else if(blockData.Row == 3)
-            {
-                offsets = threeByThreeOffsets;
-            }
-            else
-            {
-                Debug.Assert(blockData.Row == 4);
-
-                offsets = fourByFourOffsets;
-            }
-
-            Debug.Assert(offsets.Length == blockData.Cells.Length);
-            var cellOffsets = new List<Vector3>();
-
-            for(var i = 0; i < blockData.Cells.Length; ++i)
-            {
-                if (blockData.Cells[i] == 1)
-                {
-                    var offset = offsets[i];
-                    offset = new Vector3(offset.x * this.cubeSize.x, offset.y * this.cubeSize.y);
-                    cellOffsets.Add(offset);
-                }
-            }
-
-            Debug.Assert(cellOffsets.Count > 0);
-
-            var blockOffset = new BlockOffset();
-            blockOffset.name = blockData.GetType().Name;
-            blockOffset.cellOffsets = cellOffsets.ToArray();
-            blockOffsets.Add(blockOffset);
+                name = blockData.GetType().Name,
+                cellOffsets = this.GetCubeOffsets(blockData)
+            };
+            blockOffsets[i] = blockOffset;
         }
 
-        return blockOffsets.ToArray();
+        return blockOffsets;
     }
 }
