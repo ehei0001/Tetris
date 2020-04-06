@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class StageSpawnManager : SpawnManager
 {
@@ -11,10 +12,10 @@ public class StageSpawnManager : SpawnManager
 
         public int[] Cells { get; } = new int[]{
             1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,
-            1,0,0,0,0,1,0,0,1,0,1,0,1,0,0,0,1,0,0,
-            1,1,1,0,0,1,0,0,1,1,1,0,1,0,1,0,1,1,1,
-            0,0,1,0,0,1,0,0,1,0,1,0,1,0,1,0,1,0,0,
-            1,1,1,0,0,1,0,0,1,0,1,0,1,1,1,0,1,1,1,
+            1,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,0,1,0,
+            1,1,1,0,0,1,0,0,1,1,1,0,1,1,0,0,0,1,0,
+            0,0,1,0,0,1,0,0,1,0,1,0,1,0,1,0,0,1,0,
+            1,1,1,0,0,1,0,0,1,0,1,0,1,0,1,0,0,1,0,
         };
     }
 
@@ -27,11 +28,20 @@ public class StageSpawnManager : SpawnManager
         var cubeOffsets = this.GetCubeOffsets(new StageBlockData());
 
         this.PutCubes(this.transform, cubeOffsets);
+
+        //StartCoroutine(this.RemoveSceneASync());
     }
 
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    IEnumerator RemoveSceneASync()
+    {
+        SceneManager.UnloadSceneAsync("Start");
+
+        yield return null;
     }
 }
