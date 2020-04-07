@@ -14,10 +14,8 @@ public class GameSpawnManager : SpawnManager
     private bool isCreating = false;
     private GameObject nextBlock;
 
-    public void PutBlock()
+    public GameObject PutBlock()
     {
-        this.BuildBlock(this.transform.position);
-
         {
             if (this.nextBlock) {
                 Destroy(this.nextBlock);
@@ -26,6 +24,8 @@ public class GameSpawnManager : SpawnManager
             this.nextBlock = this.BuildNextBlock(this.nextBlockPoint.transform.position);
             this.nextBlock.GetComponent<GameBlock>().IsDummy = true;
         }
+
+        return this.BuildBlock(this.transform.position);
     }
 
     // Start is called before the first frame update

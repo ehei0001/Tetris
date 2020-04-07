@@ -20,6 +20,19 @@ public class GameBlock : MonoBehaviour
     private GameStage stage;
     private bool isForcedDropping;
     private bool isDummy;
+
+    enum Direction 
+    { 
+        Up,
+        Down,
+        Left,
+        Right,
+    };
+
+    public void MoveUp()
+    {
+        this.Move(Direction.Up);
+    }
     
     // Start is called before the first frame update
     void Start()
@@ -51,8 +64,6 @@ public class GameBlock : MonoBehaviour
             {
                 this.stage.FreezeBlock(this.transform);
 
-                this.enabled = false;
-
                 Destroy(this.gameObject);
             }
         }
@@ -64,13 +75,13 @@ public class GameBlock : MonoBehaviour
 
         if (this.isForcedDropping)
         {
-            this.MoveDown();
+            this.Move(Direction.Down);
         }
         else
         {
             if (this.autoDownElaspedTime > this.autoDownTime)
             {
-                this.MoveDown();
+                this.Move(Direction.Down);
                 this.autoDownElaspedTime = 0;
             }
             else
@@ -84,16 +95,20 @@ public class GameBlock : MonoBehaviour
             //var offset = -this.cubeSize.y;
             //this.transform.position -= new Vector3(0, offset);
             this.Rotate();
-        } else if (Input.GetKeyDown(KeyCode.DownArrow))
+        } 
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            this.MoveDown();
-        } else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            this.Move(Direction.Down);
+        } 
+        else if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            this.MoveLeft();
-        } else if (Input.GetKeyDown(KeyCode.RightArrow))
+            this.Move(Direction.Left);
+        } 
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            this.MoveRight();
-        } else if (Input.GetKeyDown(KeyCode.Space))
+            this.Move(Direction.Right);
+        } 
+        else if (Input.GetKeyDown(KeyCode.Space))
         {
             this.isForcedDropping = true;
         }
@@ -110,36 +125,41 @@ public class GameBlock : MonoBehaviour
         }
     }
 
-    void MoveLeft()
+    void Move(Direction direction)
     {
-        this.MoveSide(false);
-    }
-
-    void MoveRight()
-    {
-        this.MoveSide(true);
-    }
-
-    void MoveDown()
-    {
-        var offset = this.cubeSize.y;
-        this.transform.position -= new Vector3(0, offset);
-
-        if (this.stage.IsCollideBlock(this.transform))
+        switch (direction) 
         {
-            this.transform.position += new Vector3(0, offset);
-        }
-    }
+            case Direction.Up:
+            case Direction.Down:
+                {
+                    var bias = (direction == Direction.Down ? 1 : -1);
+                    var offset = this.cubeSize.y * bias;
+                    this.transform.position -= new Vector3(0, offset);
 
-    void MoveSide(bool isRight)
-    {
-        var direction = (isRight ? 1 : -1);
-        var offset = this.cubeSize.x * direction;
-        this.transform.position += new Vector3(offset, 0);
+                    if (this.stage.IsCollideBlock(this.transform))
+                    {
+                        this.transform.position += new Vector3(0, offset);
+                    }
 
-        if (this.stage.IsCollideBlock(this.transform))
-        {
-            this.transform.position -= new Vector3(offset, 0);
+                    break;
+                }
+            case Direction.Left:
+            case Direction.Right:
+                {
+                    var bias = (Direction.Right == direction ? 1 : -1);
+                    var offset = this.cubeSize.x * bias;
+                    this.transform.position += new Vector3(offset, 0);
+
+                    if (this.stage.IsCollideBlock(this.transform))
+                    {
+                        this.transform.position -= new Vector3(offset, 0);
+                    }
+
+                    break;
+                }
+            default:
+                Debug.Assert(false);
+                break;
         }
     }
 }

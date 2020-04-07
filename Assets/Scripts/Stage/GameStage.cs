@@ -31,9 +31,14 @@ public class GameStage : MonoBehaviour
     private Vector3 anchorPoint;
     private Vector3 cubeSize;
     private int stateCount = 0;
+    private bool isGameOver;
 
     public void FreezeBlock(Transform blockTransform)
     {
+        if (this.isGameOver)
+        {
+            return;
+        }
         var updatedRows = new HashSet<int>();
 
         // detach all children and atttach to stage
@@ -82,7 +87,18 @@ public class GameStage : MonoBehaviour
 
         if (isRemainLine)
         {
-            this.spawnManager.GetComponent<GameSpawnManager>().PutBlock();
+            var gameObject = this.spawnManager.GetComponent<GameSpawnManager>().PutBlock();
+
+            if(this.IsCollideBlock(gameObject.transform))
+            {
+                this.isGameOver = true;
+
+                var gameBlock = gameObject.GetComponent<GameBlock>();
+                gameBlock.IsDummy = true;
+                gameBlock.MoveUp();
+
+                Debug.Log("Game Over");
+            }
         }
 
         {
@@ -139,6 +155,8 @@ public class GameStage : MonoBehaviour
         this.BuildFloor();
 
         this.spawnManager.GetComponent<GameSpawnManager>().IsReady = true;
+
+        SceneManager.LoadScene("Banner", LoadSceneMode.Additive);
     }
 
     void BuildFloor()

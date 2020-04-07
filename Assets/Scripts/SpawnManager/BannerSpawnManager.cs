@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class StageSpawnManager : SpawnManager
+public class BannerSpawnManager : SpawnManager
 {
-    class StageBlockData : IBlockData
+    class StartBannerBlockData : IBlockData
     {
         public int Column { get { return this.Cells.Length / this.Row; } }
         public int Row { get { return 5; } }
@@ -25,11 +25,11 @@ public class StageSpawnManager : SpawnManager
     {
         base.Start();
 
-        var cubeOffsets = this.GetCubeOffsets(new StageBlockData());
+        var cubeOffsets = this.GetCubeOffsets(new StartBannerBlockData());
 
         this.PutCubes(this.transform, cubeOffsets);
 
-        //StartCoroutine(this.RemoveSceneASync());
+        StartCoroutine(this.RemoveSceneASync());
     }
 
     // Update is called once per frame
