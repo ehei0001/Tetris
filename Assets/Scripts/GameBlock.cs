@@ -8,13 +8,18 @@ public class GameBlock : MonoBehaviour
     public float autoDownTime = 1;
 
     public Vector3 CubeSize { set { this.cubeSize = value; } }
+    public bool IsDummy
+    {
+        set { this.isDummy = value; }
+    }
 
     private Vector3 cubeSize;
     private Vector3 lastPosition = new Vector3();
     private float freezingElaspedTime;
     private float autoDownElaspedTime;
     private GameStage stage;
-    private bool isForcedDropping = false;
+    private bool isForcedDropping;
+    private bool isDummy;
     
     // Start is called before the first frame update
     void Start()
@@ -30,6 +35,11 @@ public class GameBlock : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (this.isDummy)
+        {
+            return;
+        }
+
         Debug.Assert(this.enabled);
 
         // it position is unchanged during n seconds, it'll freeze
@@ -40,13 +50,6 @@ public class GameBlock : MonoBehaviour
             if (this.freezeTime < freezingElaspedTime)
             {
                 this.stage.FreezeBlock(this.transform);
-
-                // next block ready
-                {
-                    var gameObject = GameObject.Find("Spawn Manager");
-                    Debug.Assert(gameObject);
-                    gameObject.GetComponent<GameSpawnManager>().PutBlock();
-                }
 
                 this.enabled = false;
 

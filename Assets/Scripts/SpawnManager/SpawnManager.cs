@@ -115,7 +115,20 @@ public class SpawnManager : MonoBehaviour
         new ZTypeBlockData(),
     };
     private BlockOffset[] blockOffsets;
-    private Bounds cameraBounds;
+    private int nextBlockIndex;
+
+    public GameObject BuildBlock(Vector3 position)
+    {
+        var index = this.nextBlockIndex;
+        this.nextBlockIndex = Random.Range(0, this.blockDatas.Length);
+
+        return this.CreateBlock(position, index);
+    }
+
+    public GameObject BuildNextBlock(Vector3 position)
+    {
+        return this.CreateBlock(position, this.nextBlockIndex);
+    }
 
     // Start is called before the first frame update
     protected void Start()
@@ -126,42 +139,8 @@ public class SpawnManager : MonoBehaviour
         Debug.Assert(this.cubeSize.magnitude > 0);
 
         this.blockOffsets = this.UpdateBlockData(this.cubeSize);
-
-        cubePrefab.transform.localScale = this.cubeSize;
-        this.cameraBounds = this.GetCameraBounds();
-    }
-
-    protected GameObject BuildBlock(Vector3 position)
-    {
-        int index = Random.Range(0, this.blockOffsets.Length);
-        var blockOffset = this.blockOffsets[index];
-        var blockGameObject = Instantiate(blockPrefab, position, Quaternion.identity);
-
-        {
-            var gameBlock = blockGameObject.GetComponent<GameBlock>();
-
-            if (gameBlock)
-            {
-                gameBlock.CubeSize = this.cubeSize;
-            }
-        }
-        
-        var cubeWidth = this.cubeSize.x;
-        var cubeHeight = this.cubeSize.y;
-        Debug.Assert(cubeWidth > 0 && cubeHeight > 0);
-
-        var material = Resources.Load<Material>("Materials/" + blockOffset.name);
-        Debug.Assert(material, blockOffset.name + " is not found");
-
-        foreach(var offset in blockOffset.cellOffsets)
-        {
-            var cell = Instantiate(cubePrefab, Vector3.zero, cubePrefab.transform.rotation);
-            cell.transform.parent = blockGameObject.transform;
-            cell.transform.localPosition = offset;
-            cell.GetComponent<Renderer>().sharedMaterial = material;
-        }
-
-        return blockGameObject;
+        this.cubePrefab.transform.localScale = this.cubeSize;
+        this.nextBlockIndex = Random.Range(0, this.blockOffsets.Length);
     }
 
     protected Vector3[] GetCubeOffsets(IBlockData blockData)
@@ -213,38 +192,36 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
-
-    Bounds GetCameraBounds()
+    GameObject CreateBlock(Vector3 position, int index)
     {
-        // https://forum.unity.com/threads/calculating-world-position-of-screens-corners.9292/
-        var camera = Camera.main;
-        var canvas = GameObject.Find("Canvas");
+        var blockOffset = this.blockOffsets[index];
+        var blockGameObject = Instantiate(blockPrefab, position, Quaternion.identity);
 
-        if (canvas)
         {
-            var depth = (canvas.transform.position.z - camera.transform.position.z);
+            var gameBlock = blockGameObject.GetComponent<GameBlock>();
 
-            // Screens coordinate corner location
-            var upperLeftScreen = new Vector3(0, Screen.height, depth);
-            var upperRightScreen = new Vector3(Screen.width, Screen.height, depth);
-            var lowerLeftScreen = new Vector3(0, 0, depth);
-            var lowerRightScreen = new Vector3(Screen.width, 0, depth);
-
-            //Corner locations in world coordinates
-            //var upperLeft = camera.ScreenToWorldPoint(upperLeftScreen);
-            var upperRight = camera.ScreenToWorldPoint(upperRightScreen);
-            var lowerLeft = camera.ScreenToWorldPoint(lowerLeftScreen);
-            //var lowerRight = camera.ScreenToWorldPoint(lowerRightScreen);
-
-            var size = upperRight - lowerLeft;
-            var center = lowerLeft + size / 2;
-
-            return new Bounds(center, size);
+            if (gameBlock)
+            {
+                gameBlock.CubeSize = this.cubeSize;
+            }
         }
-        else
+
+        var cubeWidth = this.cubeSize.x;
+        var cubeHeight = this.cubeSize.y;
+        Debug.Assert(cubeWidth > 0 && cubeHeight > 0);
+
+        var material = Resources.Load<Material>("Materials/" + blockOffset.name);
+        Debug.Assert(material, blockOffset.name + " is not found");
+
+        foreach (var offset in blockOffset.cellOffsets)
         {
-            return new Bounds();
+            var cell = Instantiate(cubePrefab, Vector3.zero, cubePrefab.transform.rotation);
+            cell.transform.parent = blockGameObject.transform;
+            cell.transform.localPosition = offset;
+            cell.GetComponent<Renderer>().sharedMaterial = material;
         }
+
+        return blockGameObject;
     }
 
     BlockOffset[] UpdateBlockData(Vector3 cubeSize)

@@ -4,16 +4,28 @@ using UnityEngine;
 
 public class GameSpawnManager : SpawnManager
 {
-    public bool IsReady {
+    public GameObject nextBlockPoint;
+    public bool IsReady
+    {
         set { this.isReady = value; }
     }
 
     private bool isReady = false;
     private bool isCreating = false;
+    private GameObject nextBlock;
 
     public void PutBlock()
     {
         this.BuildBlock(this.transform.position);
+
+        {
+            if (this.nextBlock) {
+                Destroy(this.nextBlock);
+            }
+
+            this.nextBlock = this.BuildNextBlock(this.nextBlockPoint.transform.position);
+            this.nextBlock.GetComponent<GameBlock>().IsDummy = true;
+        }
     }
 
     // Start is called before the first frame update

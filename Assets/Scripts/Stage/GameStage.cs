@@ -58,6 +58,7 @@ public class GameStage : MonoBehaviour
         var filledRows = this.GetFilledRows(updatedRows);
 
         this.ClearRows(filledRows);
+        var isRemainLine = true;
 
         if (filledRows.Count > 0)
         {
@@ -74,8 +75,20 @@ public class GameStage : MonoBehaviour
             }
             else
             {
-                // TODO:stage clear guide
+                this.remaingLineText.text = "";
+                isRemainLine = false;
             }
+        }
+
+        if (isRemainLine)
+        {
+            this.spawnManager.GetComponent<GameSpawnManager>().PutBlock();
+        }
+
+        {
+            var gameObject = GameObject.Find("Particle System");
+            gameObject.transform.position = blockTransform.position;
+            gameObject.GetComponent<ParticleSystem>().Play();
         }
     }
 
@@ -124,6 +137,8 @@ public class GameStage : MonoBehaviour
         this.cubeSize = this.cubePrefab.GetComponent<Renderer>().bounds.size;
 
         this.BuildFloor();
+
+        this.spawnManager.GetComponent<GameSpawnManager>().IsReady = true;
     }
 
     void BuildFloor()
@@ -170,14 +185,26 @@ public class GameStage : MonoBehaviour
             Debug.Log("anchor point:" + this.anchorPoint);
         }
 
-        // Spawn Manager reloate
+        // Spawn Manager relocate
         {
             var transform = this.spawnManager.transform;
             var bias = 3;
             var x = left + (right - left) / 2 - cubeWidth / 2 + bias;
 
             transform.position = new Vector3(x, transform.position.y, this.rightWall.transform.position.z);
-            this.spawnManager.GetComponent<GameSpawnManager>().IsReady = true;
+        }
+
+        // text relocate
+        {
+            var names = new string[] { "Remain Lines", "Score" };
+
+            foreach (var name in names)
+            {
+                var gameObject = GameObject.Find(name);
+                var width = gameObject.GetComponent<RectTransform>().rect.width;
+                var position = gameObject.transform.position;
+                gameObject.transform.position = new Vector3(left - width / 2, position.y, position.z);
+            }
         }
 
         // obstacles create at random location
