@@ -5,12 +5,25 @@ using UnityEngine.SceneManagement;
 
 public class BannerSpawnManager : SpawnManager
 {
-    class StartBannerBlockData : IBlockData
+    enum Banner
+    {
+        Start,
+        GameOver,
+        StageClear,
+    }
+
+    class BannerBlockData : IBlockData
     {
         public int Column { get { return this.Cells.Length / this.Row; } }
-        public int Row { get { return 5; } }
+        public virtual int Row { get; }
+        public virtual int[] Cells { get; }
+    }
 
-        public int[] Cells { get; } = new int[]{
+    class StartBannerBlockData : BannerBlockData
+    {
+        public override int Row { get { return 5; } }
+
+        public override int[] Cells { get; } = new int[]{
             1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,
             1,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,0,1,0,
             1,1,1,0,0,1,0,0,1,1,1,0,1,1,0,0,0,1,0,
@@ -19,17 +32,45 @@ public class BannerSpawnManager : SpawnManager
         };
     }
 
+    class TheEndBannerBlockData : BannerBlockData
+    {
+        public override int Row { get { return 11; } }
+        public override int[] Cells { get; } = new int[]{
+            1,1,1,0,1,0,1,0,1,1,1,
+            0,1,0,0,1,0,1,0,1,0,0,
+            0,1,0,0,1,1,1,0,1,1,1,
+            0,1,0,0,1,0,1,0,1,0,0,
+            0,1,0,0,1,0,1,0,1,1,1,
+            0,0,0,0,0,0,0,0,0,0,0,
+            1,1,1,0,1,0,1,0,1,1,0,
+            1,0,0,0,1,1,1,0,1,0,1,
+            1,1,1,0,1,0,1,0,1,0,1,
+            1,0,0,0,1,0,1,0,1,0,1,
+            1,1,1,0,1,0,1,0,1,1,0,
+        };
+    }
+
+    class GoodBannerBlockData : BannerBlockData
+    {
+        public override int Row { get { return 5; } }
+        public override int[] Cells { get; } = new int[]{
+            1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,
+            1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,
+            1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+            1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,
+            1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,
+        };
+    }
+
+    private GameObject banner;
+    private Vector3 bannerLocalPosition = new Vector3(300, 0, -200);
 
     // Start is called before the first frame update
     new void Start()
     {
+        this.banner = new GameObject();
+
         base.Start();
-
-        var cubeOffsets = this.GetCubeOffsets(new StartBannerBlockData());
-
-        this.PutCubes(this.transform, cubeOffsets);
-
-        StartCoroutine(this.RemoveSceneASync());
     }
 
     // Update is called once per frame
@@ -38,10 +79,78 @@ public class BannerSpawnManager : SpawnManager
         
     }
 
-    IEnumerator RemoveSceneASync()
+    public void PutStart(float clearTime)
     {
-        SceneManager.UnloadSceneAsync("Start");
+        this.Put(Banner.Start, clearTime);
+    }
 
-        yield return null;
+    public void PutGameOver(float clearTime)
+    {
+        this.Put(Banner.GameOver, clearTime);
+    }
+
+    public void PutStageClear(float clearTime)
+    {
+        this.Put(Banner.StageClear, clearTime);
+    }
+
+    public void ClearBanner(float clearTime)
+    {
+        StartCoroutine(this.Clear(clearTime));
+    }
+
+    IEnumerator Clear(float clearTime)
+    {
+        yield return new WaitForSeconds(clearTime);
+
+        var velocity = 1;
+
+        for(var i = 0; i < 1000; ++i, ++velocity)
+        {
+            this.banner.transform.position -= new Vector3(i * velocity, 0, 0);
+
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        foreach(Transform child in this.banner.transform)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
+    void Put(Banner banner, float clearTime)
+    {
+        Vector3[] cubeOffsets;
+
+        switch (banner)
+        {
+            case Banner.Start:
+                {
+                    cubeOffsets = this.GetCubeOffsets(new StartBannerBlockData());
+                    break;
+                }
+            case Banner.GameOver:
+                {
+                    cubeOffsets = this.GetCubeOffsets(new TheEndBannerBlockData());
+                    break;
+                }
+            case Banner.StageClear:
+                {
+                    cubeOffsets = this.GetCubeOffsets(new GoodBannerBlockData());
+                    break;
+                }
+            default:
+                Debug.Assert(false);
+                return;
+        }
+
+        this.banner.transform.localPosition = this.bannerLocalPosition;
+
+        this.PutCubes(this.banner.transform, cubeOffsets);
+
+        if (clearTime > 0)
+        {
+            StartCoroutine(this.Clear(clearTime));
+        }
     }
 }

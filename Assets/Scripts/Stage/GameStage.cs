@@ -32,7 +32,15 @@ public class GameStage : MonoBehaviour
     private Vector3 cubeSize;
     private int stateCount = 0;
     private bool isGameOver;
+    private BannerSpawnManager bannerManager;
 
+    enum Banner {
+        Start,
+        GameOver,
+        StageClear,
+        Remove,
+    }
+    
     public void FreezeBlock(Transform blockTransform)
     {
         if (this.isGameOver)
@@ -97,8 +105,16 @@ public class GameStage : MonoBehaviour
                 gameBlock.IsDummy = true;
                 gameBlock.MoveUp();
 
-                Debug.Log("Game Over");
+                StartCoroutine(this.PutBanner(Banner.GameOver));
+
+                StartCoroutine(this.LoadTitle());
             }
+        }
+        else
+        {
+            StartCoroutine(this.PutBanner(Banner.StageClear));
+
+            StartCoroutine(this.ClearStage());
         }
 
         {
@@ -150,13 +166,13 @@ public class GameStage : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        SceneManager.LoadScene("Banner", LoadSceneMode.Additive);
+
         this.cubeSize = this.cubePrefab.GetComponent<Renderer>().bounds.size;
 
         this.BuildFloor();
 
         this.spawnManager.GetComponent<GameSpawnManager>().IsReady = true;
-
-        SceneManager.LoadScene("Banner", LoadSceneMode.Additive);
     }
 
     void BuildFloor()
@@ -263,6 +279,8 @@ public class GameStage : MonoBehaviour
             var remaingLine = this.stateCount + this.fillingLineCount;
             this.remaingLineText.text = remaingLine.ToString();
         }
+
+        StartCoroutine(this.PutBanner(Banner.Start));
     }
 
     void ReserveCellMap(int maxRow)
@@ -352,5 +370,94 @@ public class GameStage : MonoBehaviour
                 }
             }
         }
+    }
+
+    IEnumerator PutBanner(Banner banner)
+    {
+        var manager = this.bannerManager;
+
+        while (!manager)
+        {
+            var gameObject = GameObject.Find("Banner Manager");
+
+            if (gameObject)
+            {
+                this.bannerManager = manager = gameObject.GetComponent<BannerSpawnManager>();
+                break;
+            }
+            else
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        switch (banner) {
+            case Banner.Start:
+                {
+                    bannerManager.PutStart(1);
+                    break;
+                }
+            case Banner.GameOver:
+                {
+                    bannerManager.PutGameOver(0);
+                    break;
+                }
+            case Banner.StageClear:
+                {
+                    bannerManager.PutStageClear(0);
+                    break;
+                }
+            case Banner.Remove:
+                {
+                    bannerManager.ClearBanner(0);
+                    break;
+                }
+            default:
+                Debug.Assert(false);
+                break;
+        }
+
+        yield return null;
+    }
+
+    IEnumerator LoadTitle()
+    {
+        yield return new WaitForSeconds(3);
+
+        SceneManager.LoadSceneAsync("Title");
+    }
+
+    IEnumerator ClearStage()
+    {
+        var spawnManagerPosition = this.spawnManager.transform.position;
+        var height = spawnManagerPosition.y - this.floor.transform.position.y;
+        var rowCount = (int)(height / this.cubeSize.y);
+
+        for (var row = 0; row < rowCount; ++row)
+        {
+            var gameObject = new GameObject();
+            var y = spawnManagerPosition.y - cubeSize.y * row;
+            gameObject.transform.position = new Vector3(spawnManagerPosition.x, y, spawnManagerPosition.z);
+
+            var materialIndex = row % this.materialNames.Length;
+            var materialName = this.materialNames[materialIndex];
+            var material = Resources.Load<Material>(materialName);
+            Debug.Assert(material, materialName + " is not found");
+
+            var cube = Instantiate(this.cubePrefab, gameObject.transform);
+            cube.transform.localScale = new Vector3(this.cubeSize.x * this.floorCubeCount, this.cubeSize.y, this.cubeSize.z);
+            cube.GetComponent<Renderer>().sharedMaterial = material;
+
+            yield return new WaitForSeconds(0.05f);
+        }
+
+        this.PutBanner(Banner.Remove);
+
+        // ready stage
+        {
+
+        }
+
+        yield return null;
     }
 }

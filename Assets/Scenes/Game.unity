@@ -5839,7 +5839,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c61986d6d6bcebe4eb8569168c5b9441, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fillingLineCount: 5
+  fillingLineCount: 1
   floorCubeCount: 12
   obstacleRowCount: 0
   leftWall: {fileID: 2089361147}

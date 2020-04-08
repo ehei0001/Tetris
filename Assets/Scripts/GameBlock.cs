@@ -127,6 +127,17 @@ public class GameBlock : MonoBehaviour
 
     void Move(Direction direction)
     {
+        if (!this.transform)
+        {
+            Debug.Log("Destoyed block can't move");
+            return;
+        }
+        else if (!this.stage)
+        {
+            Debug.Log("Stage isn't");
+            return;
+        }
+
         switch (direction) 
         {
             case Direction.Up:
