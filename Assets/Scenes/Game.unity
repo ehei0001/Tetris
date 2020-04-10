@@ -5842,7 +5842,7 @@ MonoBehaviour:
   fillingLineCount: 0
   floorCubeCount: 12
   obstacleRowCount: 0
-  autoFillLineCreateTime: 10
+  autoFillLineCreateTime: 3
   freezeTime: 1
   leftWall: {fileID: 2089361147}
   rightWall: {fileID: 2138577778}

@@ -36,6 +36,8 @@ public class GameStage : MonoBehaviour
     private bool isGameOver;
     private BannerSpawnManager bannerManager;
     private float autoFillLineElapsedTime;
+    private bool isGameClear;
+    private int score;
 
     enum Banner {
         Start,
@@ -79,8 +81,7 @@ public class GameStage : MonoBehaviour
         if (filledRows.Count > 0)
         {
             var score = (int)Mathf.Pow(filledRows.Count, 2);
-            
-            this.scoreText.text = Convert.ToString(score, 16).ToLower();
+            this.AddScore(score);
 
             var remainedLine = int.Parse(this.remaingLineText.text);
             remainedLine -= filledRows.Count;
@@ -114,6 +115,8 @@ public class GameStage : MonoBehaviour
         }
         else
         {
+            this.isGameClear = true;
+
             StartCoroutine(this.PutBanner(Banner.StageClear));
             StartCoroutine(this.ClearStage());
         }
@@ -136,7 +139,7 @@ public class GameStage : MonoBehaviour
             {
                 return true;
             } 
-            else if(cellIndex.y <= 0)
+            else if(cellIndex.y < 0)
             {
                 return true;
             } 
@@ -175,7 +178,7 @@ public class GameStage : MonoBehaviour
         var localPosition = position - this.anchorPoint;
         var cellIndex = new Vector2(localPosition.x / cubeWidth, localPosition.y / cubeHeight);
         var x = (int)cellIndex.x;
-        var y = (int)cellIndex.y;
+        var y = (int)cellIndex.y - 1;
 
         return new Vector2Int(x, y);
     }
@@ -193,7 +196,7 @@ public class GameStage : MonoBehaviour
 
     private void Update()
     {
-        if (!this.isGameOver)
+        if (!this.isGameOver && !this.isGameClear)
         {
             if (this.autoFillLineElapsedTime > this.autoFillLineCreateTime)
             {
@@ -441,7 +444,7 @@ public class GameStage : MonoBehaviour
     {
         var spawnManagerPosition = this.spawnManager.transform.position;
         var height = spawnManagerPosition.y - this.floor.transform.position.y;
-        var rowCount = (int)(height / this.cubeSize.y) - this.cellTransforms.Count;
+        var rowCount = (int)(height / this.cubeSize.y) - this.cellTransforms.Count - 1;
 
         var lineStock = new GameObject("Line Stock");
 
@@ -461,6 +464,8 @@ public class GameStage : MonoBehaviour
             cube.transform.localScale = new Vector3(this.cubeSize.x * this.floorCubeCount, this.cubeSize.y, this.cubeSize.z);
             cube.GetComponent<Renderer>().sharedMaterial = material;
 
+            this.AddScore(10 * row);
+
             yield return new WaitForSeconds(0.05f);
         }
 
@@ -476,6 +481,7 @@ public class GameStage : MonoBehaviour
         this.autoFillLineCreateTime *= 0.8f;
         this.autoFillLineElapsedTime = 0;
         this.freezeTime *= 0.9f;
+        this.isGameClear = false;
 
         // line clear
         {
@@ -562,5 +568,12 @@ public class GameStage : MonoBehaviour
         yield return this.PutBanner(Banner.GameOver);
         yield return new WaitForSeconds(3);
         yield return SceneManager.LoadSceneAsync("Title");
+    }
+
+    void AddScore(int score)
+    {
+        score += this.score;
+
+        this.scoreText.text = Convert.ToString(score, 16).ToLower();
     }
 }
