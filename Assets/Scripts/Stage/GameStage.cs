@@ -37,7 +37,7 @@ public class GameStage : MonoBehaviour
     private BannerSpawnManager bannerManager;
     private float autoFillLineElapsedTime;
     private bool isGameClear;
-    private int score;
+    private int score = 0;
 
     enum Banner {
         Start,
@@ -52,7 +52,19 @@ public class GameStage : MonoBehaviour
         {
             return;
         }
+        
+
         var updatedRows = new HashSet<int>();
+
+        // block can collide by moving block to upside
+        if(this.IsCollideBlock(blockTransform))
+        {
+            var y = this.GetTopCellY(blockTransform);
+
+            blockTransform.GetComponent<GameBlock>().MoveUp(y);
+
+            Debug.Log("Move Up");
+        }
 
         // detach all children and atttach to stage
         for (var i = blockTransform.childCount - 1; i >= 0; --i)
@@ -67,6 +79,7 @@ public class GameStage : MonoBehaviour
                 var cellIndex = this.GetCellIndex(position);
 
                 this.ReserveCellMap(cellIndex.y);
+                Debug.Assert(!this.cellTransforms[cellIndex.y][cellIndex.x], "It'll cause lone block");
                 this.cellTransforms[cellIndex.y][cellIndex.x] = childTransform;
 
                 updatedRows.Add(cellIndex.y);
@@ -105,7 +118,7 @@ public class GameStage : MonoBehaviour
             {
                 this.isGameOver = true;
 
-                var y = this.GetTopCellY();
+                var y = this.GetTopCellY(gameObject.transform);
                 var gameBlock = gameObject.GetComponent<GameBlock>();
                 gameBlock.IsDummy = true;
                 gameBlock.MoveUp(y);
@@ -155,20 +168,35 @@ public class GameStage : MonoBehaviour
         return false;
     }
 
-    float GetTopCellY()
+    // get enable top point of block vertically
+    float GetTopCellY(Transform blockTransform)
     {
-        var topLine = this.cellTransforms[this.cellTransforms.Count - 1];
+        var columns = new HashSet<int>();
 
-        foreach(var transform in topLine)
+        foreach(Transform childTransform in blockTransform)
         {
-            if (transform)
+            var index = this.GetCellIndex(childTransform.position);
+            columns.Add(index.x);
+        }
+
+        for(var i = this.cellTransforms.Count - 1; i >= 0; --i)
+        {
+            var lineTransform = this.cellTransforms[i];
+
+            foreach (var column in columns)
             {
-                return transform.position.y;
+                Debug.Assert(lineTransform.Length > column);
+
+                var transform = lineTransform[column];
+
+                if (transform)
+                {
+                    return transform.position.y;
+                }
             }
         }
 
-        Debug.Assert(true);
-        return 0;
+        return anchorPoint.y;
     }
 
     Vector2Int GetCellIndex(Vector3 position)
@@ -202,32 +230,7 @@ public class GameStage : MonoBehaviour
             {
                 this.autoFillLineElapsedTime = 0;
 
-                var offset = this.cubeSize.y;
-
-                foreach (var line in this.cellTransforms)
-                {
-                    foreach (var transform in line)
-                    {
-                        if (transform)
-                        {
-                            transform.position += new Vector3(0, offset);
-                        }
-                    }
-                }
-
-                var transforms = new Transform[this.floorCubeCount];
-                this.cellTransforms.Insert(0, transforms);
-
-                var material = Resources.Load<Material>("Materials/Wall/Wall");
-
-                for (int i = 0; i < this.floorCubeCount; ++i)
-                {
-                    var x = anchorPoint.x + this.cubeSize.x * i;
-                    var y = anchorPoint.y + this.cubeSize.y;
-                    var cell = Instantiate(this.cubePrefab, new Vector3(x, y, anchorPoint.z), Quaternion.identity);
-                    cell.GetComponent<Renderer>().sharedMaterial = material;
-                    transforms[i] = cell.transform;
-                }
+                this.FillBottom();
             }
             else
             {
@@ -238,8 +241,6 @@ public class GameStage : MonoBehaviour
 
     void BuildFloor()
     {
-        this.cellTransforms.Clear();
-
         var cubeWidth = this.cubeSize.x;
         var cubeHeight = this.cubeSize.y;
         var right = this.rightWall.transform.position.x - this.rightWall.GetComponent<Renderer>().bounds.size.x / 2;
@@ -557,7 +558,18 @@ public class GameStage : MonoBehaviour
         {
             var spawnManager = this.spawnManager.GetComponent<GameSpawnManager>();
             spawnManager.FreezeTime = this.freezeTime;
-            spawnManager.PutBlock();
+            
+            var block = spawnManager.PutBlock();
+
+            if (block)
+            {
+                if (this.IsCollideBlock(block.transform))
+                {
+                    block.GetComponent<GameBlock>().MoveUp(0);
+                }
+            }
+
+            
         }
 
         yield return this.PutBanner(Banner.Start);
@@ -575,5 +587,48 @@ public class GameStage : MonoBehaviour
         score += this.score;
 
         this.scoreText.text = Convert.ToString(score, 16).ToLower();
+    }
+
+    void FillBottom()
+    {
+        var offset = this.cubeSize.y;
+        var material = Resources.Load<Material>("Materials/Wall/Wall");
+        var cellIndex = this.GetCellIndex(anchorPoint);
+        ReserveCellMap(cellIndex.y);
+        var transforms = new Transform[this.floorCubeCount];
+        this.cellTransforms.Insert(0, transforms);
+
+        for (int i = 0; i < this.floorCubeCount; ++i)
+        {
+            var x = anchorPoint.x + this.cubeSize.x * i;
+            var y = anchorPoint.y;
+            var cell = Instantiate(this.cubePrefab, new Vector3(x, y, anchorPoint.z), Quaternion.identity);
+            cell.GetComponent<Renderer>().sharedMaterial = material;
+            transforms[i] = cell.transform;
+        }
+
+        foreach (var line in this.cellTransforms)
+        {
+            foreach (var transform in line)
+            {
+                if (transform)
+                {
+                    transform.position += new Vector3(0, offset);
+                }
+            }
+        }
+
+        foreach (var block in GameObject.FindGameObjectsWithTag("Block"))
+        {
+            var gameBlock = block.GetComponent<GameBlock>();
+
+            if (!gameBlock.IsDummy)
+            {
+                while (this.IsCollideBlock(block.transform))
+                {
+                    gameBlock.MoveUp(0);
+                }
+            }
+        }
     }
 }

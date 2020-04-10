@@ -16,6 +16,7 @@ public class GameBlock : MonoBehaviour
     public Vector3 CubeSize { set { this.cubeSize = value; } }
     public bool IsDummy
     {
+        get { return this.isDummy; }
         set { this.isDummy = value; }
     }
 
@@ -45,17 +46,18 @@ public class GameBlock : MonoBehaviour
 
     public void MoveUp(float y)
     {
-        var lowestY = 0.0f;
+        //Debug.Assert(transform.childCount > 0);
 
-        for (var i = 0; i < transform.childCount; ++i)
-        {
-            var childTransform = transform.GetChild(i);
-            lowestY = Mathf.Max(lowestY, childTransform.position.y);
-        }
+        //var yOffset = 0.0f;
 
-        y -= lowestY - this.cubeSize.y * 2;
+        //for (var i = 1; i < transform.childCount; ++i)
+        //{
+        //    var childTransform = transform.GetChild(i);
+        //    var childYOffset = y - childTransform.position.y;
+        //    yOffset = Mathf.Max(Mathf.Abs(childYOffset), yOffset);
+        //}
 
-        this.transform.position += new Vector3(0, y);
+        this.transform.position += new Vector3(0, this.cubeSize.y);
     }
 
     // Update is called once per frame
@@ -89,6 +91,11 @@ public class GameBlock : MonoBehaviour
         if (this.isForcedDropping)
         {
             this.Move(Direction.Down);
+
+            if (this.Stage.IsCollideBlock(this.transform))
+            {
+                this.Stage.FreezeBlock(this.transform);
+            }
         }
         else
         {
@@ -158,11 +165,15 @@ public class GameBlock : MonoBehaviour
                 {
                     var bias = (direction == Direction.Down ? 1 : -1);
                     var offset = this.cubeSize.y * bias;
-                    this.transform.position -= new Vector3(0, offset);
-
-                    if (this.Stage.IsCollideBlock(this.transform))
+                    
+                    if (!this.Stage.IsCollideBlock(this.transform))
                     {
-                        this.transform.position += new Vector3(0, offset);
+                        this.transform.position -= new Vector3(0, offset);
+
+                        if (this.Stage.IsCollideBlock(this.transform))
+                        {
+                            this.transform.position += new Vector3(0, offset);
+                        }
                     }
 
                     break;
@@ -172,11 +183,15 @@ public class GameBlock : MonoBehaviour
                 {
                     var bias = (Direction.Right == direction ? 1 : -1);
                     var offset = this.cubeSize.x * bias;
-                    this.transform.position += new Vector3(offset, 0);
-
-                    if (this.Stage.IsCollideBlock(this.transform))
+                    
+                    if (!this.Stage.IsCollideBlock(this.transform))
                     {
-                        this.transform.position -= new Vector3(offset, 0);
+                        this.transform.position += new Vector3(offset, 0);
+
+                        if (this.Stage.IsCollideBlock(this.transform))
+                        {
+                            this.transform.position -= new Vector3(offset, 0);
+                        }
                     }
 
                     break;

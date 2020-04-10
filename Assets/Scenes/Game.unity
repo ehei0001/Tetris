@@ -5841,8 +5841,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fillingLineCount: 0
   floorCubeCount: 12
-  obstacleRowCount: 0
-  autoFillLineCreateTime: 3
+  obstacleRowCount: -1
+  autoFillLineCreateTime: 5
   freezeTime: 1
   leftWall: {fileID: 2089361147}
   rightWall: {fileID: 2138577778}
