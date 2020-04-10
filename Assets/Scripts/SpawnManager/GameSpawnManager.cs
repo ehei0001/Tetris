@@ -31,6 +31,9 @@ public class GameSpawnManager : SpawnManager
             return null;
         }
 
+        var block = this.BuildBlock(this.transform.position);
+        block.GetComponent<GameBlock>().FreezeTime = this.freezeTime;
+
         {
             if (this.nextBlock) {
                 Destroy(this.nextBlock);
@@ -40,12 +43,7 @@ public class GameSpawnManager : SpawnManager
             this.nextBlock.GetComponent<GameBlock>().IsDummy = true;
         }
 
-        {
-            var block = this.BuildBlock(this.transform.position);
-            block.GetComponent<GameBlock>().FreezeTime = this.freezeTime;
-
-            return block;
-        }
+        return block;
     }
 
     // Start is called before the first frame update

@@ -10,6 +10,7 @@ public class GameStage : MonoBehaviour
     public int fillingLineCount = 0;
     public int floorCubeCount = 12;
     public int obstacleRowCount = 0;
+    public int autoFilledLineCreateTime = 10;
     public float freezeTime = 1;
     public GameObject leftWall;
     public GameObject rightWall;
@@ -102,19 +103,17 @@ public class GameStage : MonoBehaviour
             {
                 this.isGameOver = true;
 
+                var y = this.GetTopCellY();
                 var gameBlock = gameObject.GetComponent<GameBlock>();
                 gameBlock.IsDummy = true;
-                gameBlock.MoveUp();
+                gameBlock.MoveUp(y);
 
-                StartCoroutine(this.PutBanner(Banner.GameOver));
-
-                StartCoroutine(this.LoadTitle());
+                StartCoroutine(GameOver());
             }
         }
         else
         {
             StartCoroutine(this.PutBanner(Banner.StageClear));
-
             StartCoroutine(this.ClearStage());
         }
 
@@ -150,6 +149,22 @@ public class GameStage : MonoBehaviour
         }
 
         return false;
+    }
+
+    float GetTopCellY()
+    {
+        var topLine = this.cellTransforms[this.cellTransforms.Count - 1];
+
+        foreach(var transform in topLine)
+        {
+            if (transform)
+            {
+                return transform.position.y;
+            }
+        }
+
+        Debug.Assert(true);
+        return 0;
     }
 
     Vector2Int GetCellIndex(Vector3 position)
@@ -379,13 +394,6 @@ public class GameStage : MonoBehaviour
         yield return null;
     }
 
-    IEnumerator LoadTitle()
-    {
-        yield return new WaitForSeconds(3);
-
-        SceneManager.LoadSceneAsync("Title");
-    }
-
     IEnumerator ClearStage()
     {
         var spawnManagerPosition = this.spawnManager.transform.position;
@@ -412,6 +420,8 @@ public class GameStage : MonoBehaviour
 
             yield return new WaitForSeconds(0.05f);
         }
+
+        yield return new WaitForSeconds(1);
 
         yield return this.Restart();
     }
@@ -447,8 +457,6 @@ public class GameStage : MonoBehaviour
 
             this.cellTransforms.Clear();
         }
-
-        yield return this.PutBanner(Banner.Remove);
 
         // obstacles create at random location
         if (this.obstacleRowCount > 0)
@@ -503,5 +511,12 @@ public class GameStage : MonoBehaviour
         }
 
         yield return this.PutBanner(Banner.Start);
+    }
+
+    IEnumerator GameOver()
+    {
+        yield return this.PutBanner(Banner.GameOver);
+        yield return new WaitForSeconds(3);
+        yield return SceneManager.LoadSceneAsync("Title");
     }
 }

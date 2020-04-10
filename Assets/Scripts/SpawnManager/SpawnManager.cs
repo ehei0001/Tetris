@@ -106,13 +106,13 @@ public class SpawnManager : MonoBehaviour
     }
 
     private BlockData[] blockDatas = new BlockData[] {
-        //new ITypeBlockData(),
+        new ITypeBlockData(),
         new JTypeBlockData(),
-        //new LTypeBlockData(),
-        //new OTypeBlockData(),
-        //new STypeBlockData(),
-        //new TTypeBlockData(),
-        //new ZTypeBlockData(),
+        new LTypeBlockData(),
+        new OTypeBlockData(),
+        new STypeBlockData(),
+        new TTypeBlockData(),
+        new ZTypeBlockData(),
     };
     private BlockOffset[] blockOffsets;
     private int nextBlockIndex;

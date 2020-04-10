@@ -23,11 +23,17 @@ public class GameBlock : MonoBehaviour
     private Vector3 lastPosition = new Vector3();
     private float freezingElaspedTime;
     private float autoDownElaspedTime;
-    private GameStage stage;
     private bool isForcedDropping;
     private bool isDummy;
     private float freezeTime;
     private float autoDownTime;
+    private GameStage Stage {
+        get
+        {
+            var gameObject = GameObject.Find("Stage");
+            return gameObject.GetComponent<GameStage>();
+        }
+    }
 
     enum Direction 
     { 
@@ -37,18 +43,19 @@ public class GameBlock : MonoBehaviour
         Right,
     };
 
-    public void MoveUp()
+    public void MoveUp(float y)
     {
-        this.Move(Direction.Up);
-    }
-    
-    // Start is called before the first frame update
-    void Start()
-    {
+        var lowestY = 0.0f;
+
+        for (var i = 0; i < transform.childCount; ++i)
         {
-            var gameObject = GameObject.Find("Stage");
-            this.stage = gameObject.GetComponent<GameStage>();
+            var childTransform = transform.GetChild(i);
+            lowestY = Mathf.Max(lowestY, childTransform.position.y);
         }
+
+        y -= lowestY - this.cubeSize.y * 2;
+
+        this.transform.position += new Vector3(0, y);
     }
 
     // Update is called once per frame
@@ -68,7 +75,7 @@ public class GameBlock : MonoBehaviour
 
             if (this.freezeTime < freezingElaspedTime)
             {
-                this.stage.FreezeBlock(this.transform);
+                this.Stage.FreezeBlock(this.transform);
 
                 Destroy(this.gameObject);
             }
@@ -125,7 +132,7 @@ public class GameBlock : MonoBehaviour
         var angles = this.transform.eulerAngles;
         this.transform.eulerAngles += new Vector3(0, 0, 90);
 
-        if (this.stage.IsCollideBlock(this.transform))
+        if (this.Stage.IsCollideBlock(this.transform))
         {
             this.transform.eulerAngles += new Vector3(0, 0, -90);
         }
@@ -138,7 +145,7 @@ public class GameBlock : MonoBehaviour
             Debug.Log("Destoyed block can't move");
             return;
         }
-        else if (!this.stage)
+        else if (!this.Stage)
         {
             Debug.Log("Stage isn't");
             return;
@@ -153,7 +160,7 @@ public class GameBlock : MonoBehaviour
                     var offset = this.cubeSize.y * bias;
                     this.transform.position -= new Vector3(0, offset);
 
-                    if (this.stage.IsCollideBlock(this.transform))
+                    if (this.Stage.IsCollideBlock(this.transform))
                     {
                         this.transform.position += new Vector3(0, offset);
                     }
@@ -167,7 +174,7 @@ public class GameBlock : MonoBehaviour
                     var offset = this.cubeSize.x * bias;
                     this.transform.position += new Vector3(offset, 0);
 
-                    if (this.stage.IsCollideBlock(this.transform))
+                    if (this.Stage.IsCollideBlock(this.transform))
                     {
                         this.transform.position -= new Vector3(offset, 0);
                     }
