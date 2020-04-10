@@ -10,7 +10,7 @@ public class GameStage : MonoBehaviour
     public int fillingLineCount = 0;
     public int floorCubeCount = 12;
     public int obstacleRowCount = 0;
-    public int autoFilledLineCreateTime = 10;
+    public float autoFillLineCreateTime = 3;
     public float freezeTime = 1;
     public GameObject leftWall;
     public GameObject rightWall;
@@ -35,6 +35,7 @@ public class GameStage : MonoBehaviour
     private int stateCount = 0;
     private bool isGameOver;
     private BannerSpawnManager bannerManager;
+    private float autoFillLineElapsedTime;
 
     enum Banner {
         Start,
@@ -188,6 +189,48 @@ public class GameStage : MonoBehaviour
 
         this.BuildFloor();
         StartCoroutine(this.Restart());
+    }
+
+    private void Update()
+    {
+        if (!this.isGameOver)
+        {
+            if (this.autoFillLineElapsedTime > this.autoFillLineCreateTime)
+            {
+                this.autoFillLineElapsedTime = 0;
+
+                var offset = this.cubeSize.y;
+
+                foreach (var line in this.cellTransforms)
+                {
+                    foreach (var transform in line)
+                    {
+                        if (transform)
+                        {
+                            transform.position += new Vector3(0, offset);
+                        }
+                    }
+                }
+
+                var transforms = new Transform[this.floorCubeCount];
+                this.cellTransforms.Insert(0, transforms);
+
+                var material = Resources.Load<Material>("Materials/Wall/Wall");
+
+                for (int i = 0; i < this.floorCubeCount; ++i)
+                {
+                    var x = anchorPoint.x + this.cubeSize.x * i;
+                    var y = anchorPoint.y + this.cubeSize.y;
+                    var cell = Instantiate(this.cubePrefab, new Vector3(x, y, anchorPoint.z), Quaternion.identity);
+                    cell.GetComponent<Renderer>().sharedMaterial = material;
+                    transforms[i] = cell.transform;
+                }
+            }
+            else
+            {
+                this.autoFillLineElapsedTime += Time.deltaTime;
+            }
+        }
     }
 
     void BuildFloor()
@@ -430,6 +473,9 @@ public class GameStage : MonoBehaviour
     {
         this.fillingLineCount += 1;
         this.obstacleRowCount += 1;
+        this.autoFillLineCreateTime *= 0.8f;
+        this.autoFillLineElapsedTime = 0;
+        this.freezeTime *= 0.9f;
 
         // line clear
         {
@@ -503,8 +549,6 @@ public class GameStage : MonoBehaviour
         }
 
         {
-            this.freezeTime -= 0.1f;
-
             var spawnManager = this.spawnManager.GetComponent<GameSpawnManager>();
             spawnManager.FreezeTime = this.freezeTime;
             spawnManager.PutBlock();
