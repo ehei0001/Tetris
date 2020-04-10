@@ -7,9 +7,10 @@ using TMPro;
 
 public class GameStage : MonoBehaviour
 {
-    public int fillingLineCount = 5;
+    public int fillingLineCount = 0;
     public int floorCubeCount = 12;
     public int obstacleRowCount = 0;
+    public float freezeTime = 1;
     public GameObject leftWall;
     public GameObject rightWall;
     public GameObject floor;
@@ -171,8 +172,7 @@ public class GameStage : MonoBehaviour
         this.cubeSize = this.cubePrefab.GetComponent<Renderer>().bounds.size;
 
         this.BuildFloor();
-
-        this.spawnManager.GetComponent<GameSpawnManager>().IsReady = true;
+        StartCoroutine(this.Restart());
     }
 
     void BuildFloor()
@@ -240,47 +240,6 @@ public class GameStage : MonoBehaviour
                 gameObject.transform.position = new Vector3(left - width / 2, position.y, position.z);
             }
         }
-
-        // obstacles create at random location
-        if ( this.obstacleRowCount > 0 )
-        {
-            var cellTransforms = new Dictionary<Vector2Int, Transform>();
-
-            for (int row = 0; row < this.obstacleRowCount; ++row)
-            {
-                for (int column = 0; column < this.floorCubeCount; ++column)
-                {
-                    var materialIndex = UnityEngine.Random.Range(0, this.materialNames.Length);
-                    var materialName = this.materialNames[materialIndex];
-                    var material = Resources.Load<Material>("Materials/" + materialName);
-
-                    var x = anchorPoint.x + cubeWidth * column;
-                    var y = anchorPoint.y + cubeWidth * row;
-                    var cell = Instantiate(this.cubePrefab, new Vector3(x, y, anchorPoint.z), Quaternion.identity);
-                    cell.GetComponent<Renderer>().sharedMaterial = material;
-
-                    var cellIndex = this.GetCellIndex(cell.transform.position);
-                    cellTransforms.Add(cellIndex, cell.transform);
-                }
-            }
-
-            foreach (var item in cellTransforms)
-            {
-                var cellIndex = item.Key;
-
-                this.ReserveCellMap(cellIndex.y);
-
-                this.cellTransforms[cellIndex.y][cellIndex.x] = item.Value;
-            }
-        }
-
-        // remaining line update
-        {
-            var remaingLine = this.stateCount + this.fillingLineCount;
-            this.remaingLineText.text = remaingLine.ToString();
-        }
-
-        StartCoroutine(this.PutBanner(Banner.Start));
     }
 
     void ReserveCellMap(int maxRow)
@@ -404,7 +363,7 @@ public class GameStage : MonoBehaviour
                 }
             case Banner.StageClear:
                 {
-                    bannerManager.PutStageClear(0);
+                    bannerManager.PutStageClear(1);
                     break;
                 }
             case Banner.Remove:
@@ -431,17 +390,20 @@ public class GameStage : MonoBehaviour
     {
         var spawnManagerPosition = this.spawnManager.transform.position;
         var height = spawnManagerPosition.y - this.floor.transform.position.y;
-        var rowCount = (int)(height / this.cubeSize.y);
+        var rowCount = (int)(height / this.cubeSize.y) - this.cellTransforms.Count;
+
+        var lineStock = new GameObject("Line Stock");
 
         for (var row = 0; row < rowCount; ++row)
         {
-            var gameObject = new GameObject();
-            var y = spawnManagerPosition.y - cubeSize.y * row;
-            gameObject.transform.position = new Vector3(spawnManagerPosition.x, y, spawnManagerPosition.z);
+            var gameObject = new GameObject("Line");
+            gameObject.transform.parent = lineStock.transform;
+            var y = spawnManagerPosition.y - this.cubeSize.y * row;
+            gameObject.transform.position = new Vector3(spawnManagerPosition.x - this.cubeSize.x / 2, y, spawnManagerPosition.z);
 
             var materialIndex = row % this.materialNames.Length;
             var materialName = this.materialNames[materialIndex];
-            var material = Resources.Load<Material>(materialName);
+            var material = Resources.Load<Material>("Materials/" + materialName);
             Debug.Assert(material, materialName + " is not found");
 
             var cube = Instantiate(this.cubePrefab, gameObject.transform);
@@ -451,13 +413,95 @@ public class GameStage : MonoBehaviour
             yield return new WaitForSeconds(0.05f);
         }
 
-        this.PutBanner(Banner.Remove);
+        yield return this.Restart();
+    }
 
-        // ready stage
+    IEnumerator Restart()
+    {
+        this.fillingLineCount += 1;
+        this.obstacleRowCount += 1;
+
+        // line clear
         {
+            var gameObject = GameObject.Find("Line Stock");
 
+            if (gameObject)
+            {
+                Destroy(gameObject);
+            }
         }
 
-        yield return null;
+        // remain cube clear
+        if(this.cellTransforms.Count > 0)
+        {
+            foreach (var lineTransforms in this.cellTransforms)
+            {
+                foreach(var transform in lineTransforms)
+                {
+                    if (transform)
+                    {
+                        Destroy(transform.gameObject);
+                    }
+                }
+            }
+
+            this.cellTransforms.Clear();
+        }
+
+        yield return this.PutBanner(Banner.Remove);
+
+        // obstacles create at random location
+        if (this.obstacleRowCount > 0)
+        {
+            var cellTransforms = new Dictionary<Vector2Int, Transform>();
+
+            for (int row = 0; row < this.obstacleRowCount; ++row)
+            {
+                for (int column = 0; column < this.floorCubeCount; ++column)
+                {
+                    var isEnable = ( 5 < UnityEngine.Random.Range(0, 10));
+
+                    if (isEnable)
+                    {
+                        var materialIndex = UnityEngine.Random.Range(0, this.materialNames.Length);
+                        var materialName = this.materialNames[materialIndex];
+                        var material = Resources.Load<Material>("Materials/" + materialName);
+
+                        var x = anchorPoint.x + this.cubeSize.x * column;
+                        var y = anchorPoint.y + this.cubeSize.x * (row + 1);
+                        var cell = Instantiate(this.cubePrefab, new Vector3(x, y, anchorPoint.z), Quaternion.identity);
+                        cell.GetComponent<Renderer>().sharedMaterial = material;
+
+                        var cellIndex = this.GetCellIndex(cell.transform.position);
+                        cellTransforms.Add(cellIndex, cell.transform);
+                    }
+                }
+            }
+
+            foreach (var item in cellTransforms)
+            {
+                var cellIndex = item.Key;
+
+                this.ReserveCellMap(cellIndex.y);
+
+                this.cellTransforms[cellIndex.y][cellIndex.x] = item.Value;
+            }
+        }
+
+        // remaining line update
+        {
+            var remaingLine = this.stateCount + this.fillingLineCount;
+            this.remaingLineText.text = remaingLine.ToString();
+        }
+
+        {
+            this.freezeTime -= 0.1f;
+
+            var spawnManager = this.spawnManager.GetComponent<GameSpawnManager>();
+            spawnManager.FreezeTime = this.freezeTime;
+            spawnManager.PutBlock();
+        }
+
+        yield return this.PutBanner(Banner.Start);
     }
 }

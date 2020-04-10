@@ -4,8 +4,14 @@ using UnityEngine;
 
 public class GameBlock : MonoBehaviour
 {
-    public float freezeTime = 2;
-    public float autoDownTime = 1;
+    public float FreezeTime { 
+        set { 
+            this.freezeTime = value;
+            this.autoDownTime = value * 0.9f;
+
+            Debug.Assert(this.freezeTime > this.autoDownTime);
+        } 
+    }
 
     public Vector3 CubeSize { set { this.cubeSize = value; } }
     public bool IsDummy
@@ -20,6 +26,8 @@ public class GameBlock : MonoBehaviour
     private GameStage stage;
     private bool isForcedDropping;
     private bool isDummy;
+    private float freezeTime;
+    private float autoDownTime;
 
     enum Direction 
     { 
@@ -37,8 +45,6 @@ public class GameBlock : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Assert(this.freezeTime > this.autoDownTime);
-
         {
             var gameObject = GameObject.Find("Stage");
             this.stage = gameObject.GetComponent<GameStage>();

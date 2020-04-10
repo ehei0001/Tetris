@@ -68,7 +68,7 @@ public class BannerSpawnManager : SpawnManager
     // Start is called before the first frame update
     new void Start()
     {
-        this.banner = new GameObject();
+        this.banner = new GameObject("Banner");
 
         base.Start();
     }
@@ -103,16 +103,27 @@ public class BannerSpawnManager : SpawnManager
     {
         yield return new WaitForSeconds(clearTime);
 
-        var velocity = 1;
+        var velocity = 0.1f;
+        var bannerTransform = this.banner.transform;
+        var bound = new Bounds(new Vector3(0.5f, 0.5f), new Vector3(1, 1, 1));
 
         for(var i = 0; i < 1000; ++i, ++velocity)
         {
             this.banner.transform.position -= new Vector3(i * velocity, 0, 0);
 
-            yield return new WaitForSeconds(0.1f);
+            var screenPoint = Camera.main.WorldToViewportPoint(bannerTransform.position);
+
+            if (bound.Contains(new Vector3(screenPoint.x, screenPoint.y)))
+            {
+                yield return new WaitForSeconds(0.001f);
+            }
+            else
+            {
+                break;
+            }
         }
 
-        foreach(Transform child in this.banner.transform)
+        foreach(Transform child in bannerTransform)
         {
             Destroy(child.gameObject);
         }

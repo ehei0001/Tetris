@@ -4,6 +4,14 @@ using UnityEngine;
 
 public class GameSpawnManager : SpawnManager
 {
+    public float FreezeTime
+    {
+        set
+        {
+            this.freezeTime = value;
+        }
+    }
+
     public GameObject nextBlockPoint;
     public bool IsReady
     {
@@ -13,9 +21,16 @@ public class GameSpawnManager : SpawnManager
     private bool isReady = false;
     private bool isCreating = false;
     private GameObject nextBlock;
+    private float freezeTime = 1.0f;
 
     public GameObject PutBlock()
     {
+        if (!this.isReady)
+        {
+            this.IsReady = true;
+            return null;
+        }
+
         {
             if (this.nextBlock) {
                 Destroy(this.nextBlock);
@@ -25,7 +40,12 @@ public class GameSpawnManager : SpawnManager
             this.nextBlock.GetComponent<GameBlock>().IsDummy = true;
         }
 
-        return this.BuildBlock(this.transform.position);
+        {
+            var block = this.BuildBlock(this.transform.position);
+            block.GetComponent<GameBlock>().FreezeTime = this.freezeTime;
+
+            return block;
+        }
     }
 
     // Start is called before the first frame update
