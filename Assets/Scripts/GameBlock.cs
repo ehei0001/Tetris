@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class GameBlock : MonoBehaviour
 {
+    public AudioClip rotateSound;
+
     public float FreezeTime { 
         set { 
             this.freezeTime = value;
@@ -142,6 +144,10 @@ public class GameBlock : MonoBehaviour
         if (this.Stage.IsCollideBlock(this.transform))
         {
             this.transform.eulerAngles += new Vector3(0, 0, -90);
+        }
+        else
+        {
+            this.GetComponent<AudioSource>().PlayOneShot(this.rotateSound);
         }
     }
 

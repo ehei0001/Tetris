@@ -19,6 +19,11 @@ public class GameStage : MonoBehaviour
     public GameObject spawnManager;
     public TextMeshProUGUI remaingLineText;
     public TextMeshProUGUI scoreText;
+    public AudioClip freezeAudio;
+    public AudioClip clearAudio;
+    public AudioClip gameOverAudio;
+    public AudioClip clearLineAudio;
+    public AudioClip lineUpAudio;
 
     private readonly string[] materialNames = {
         "ITypeBlockData",
@@ -52,8 +57,9 @@ public class GameStage : MonoBehaviour
         {
             return;
         }
-        
 
+        this.GetComponent<AudioSource>().PlayOneShot(this.freezeAudio);
+        
         var updatedRows = new HashSet<int>();
 
         // block can collide by moving block to upside
@@ -108,6 +114,8 @@ public class GameStage : MonoBehaviour
                 this.remaingLineText.text = "";
                 isRemainLine = false;
             }
+
+            this.GetComponent<AudioSource>().PlayOneShot(this.clearLineAudio);
         }
 
         if (isRemainLine)
@@ -443,6 +451,7 @@ public class GameStage : MonoBehaviour
 
     IEnumerator ClearStage()
     {
+        var audioSource = this.GetComponent<AudioSource>();
         var spawnManagerPosition = this.spawnManager.transform.position;
         var height = spawnManagerPosition.y - this.floor.transform.position.y;
         var rowCount = (int)(height / this.cubeSize.y) - this.cellTransforms.Count - 1;
@@ -466,6 +475,8 @@ public class GameStage : MonoBehaviour
             cube.GetComponent<Renderer>().sharedMaterial = material;
 
             this.AddScore(10 * row);
+
+            audioSource.PlayOneShot(this.clearAudio);
 
             yield return new WaitForSeconds(0.05f);
         }
@@ -568,8 +579,6 @@ public class GameStage : MonoBehaviour
                     block.GetComponent<GameBlock>().MoveUp(0);
                 }
             }
-
-            
         }
 
         yield return this.PutBanner(Banner.Start);
@@ -577,6 +586,8 @@ public class GameStage : MonoBehaviour
 
     IEnumerator GameOver()
     {
+        this.GetComponent<AudioSource>().PlayOneShot(this.gameOverAudio);
+
         yield return this.PutBanner(Banner.GameOver);
         yield return new WaitForSeconds(3);
         yield return SceneManager.LoadSceneAsync("Title");
@@ -630,5 +641,7 @@ public class GameStage : MonoBehaviour
                 }
             }
         }
+
+        this.GetComponent<AudioSource>().PlayOneShot(this.lineUpAudio);
     }
 }
