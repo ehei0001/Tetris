@@ -355,7 +355,6 @@ public class GameStage : MonoBehaviour
         if (clearingRows.Count > 0)
         {
             var firstRow = clearingRows[clearingRows.Count - 1];
-            Debug.Assert(firstRow >= clearingRows[0]);
             var offset = 0.0f;
 
             for (var row = firstRow; row < this.cellTransforms.Count; ++row)
@@ -454,7 +453,7 @@ public class GameStage : MonoBehaviour
         var audioSource = this.GetComponent<AudioSource>();
         var spawnManagerPosition = this.spawnManager.transform.position;
         var height = spawnManagerPosition.y - this.floor.transform.position.y;
-        var rowCount = (int)(height / this.cubeSize.y) - this.cellTransforms.Count - 1;
+        var rowCount = (int)(height / this.cubeSize.y) - this.cellTransforms.Count + 1;
 
         var lineStock = new GameObject("Line Stock");
 
@@ -462,7 +461,7 @@ public class GameStage : MonoBehaviour
         {
             var gameObject = new GameObject("Line");
             gameObject.transform.parent = lineStock.transform;
-            var y = spawnManagerPosition.y - this.cubeSize.y * row;
+            var y = spawnManagerPosition.y - this.cubeSize.y * (row - 2);
             gameObject.transform.position = new Vector3(spawnManagerPosition.x - this.cubeSize.x / 2, y, spawnManagerPosition.z);
 
             var materialIndex = row % this.materialNames.Length;
@@ -506,17 +505,10 @@ public class GameStage : MonoBehaviour
         }
 
         // remain cube clear
-        if(this.cellTransforms.Count > 0)
         {
-            foreach (var lineTransforms in this.cellTransforms)
+            foreach(var gameObject in GameObject.FindGameObjectsWithTag("Cell"))
             {
-                foreach(var transform in lineTransforms)
-                {
-                    if (transform)
-                    {
-                        Destroy(transform.gameObject);
-                    }
-                }
+                Destroy(gameObject);
             }
 
             this.cellTransforms.Clear();
@@ -595,9 +587,8 @@ public class GameStage : MonoBehaviour
 
     void AddScore(int score)
     {
-        score += this.score;
-
-        this.scoreText.text = Convert.ToString(score, 16).ToLower();
+        this.score += score;
+        this.scoreText.text = Convert.ToString(this.score, 16).ToLower();
     }
 
     void FillBottom()
