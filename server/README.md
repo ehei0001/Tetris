@@ -1,5 +1,5 @@
 # Tetris
- server
+server
  
 #build
 https://github.com/Microsoft/vcpkg
