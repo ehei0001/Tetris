@@ -188,7 +188,7 @@ public:
 	{
 		auto sql = "SELECT NAME, SCORE FROM RANK ORDER BY SCORE";
 
-		return _get_query_iterator<std::string, int>(sql);
+		return _get_record_range<std::string, int>(sql);
 	}
 
 	bool put_rank(const std::string& name, int score)
@@ -214,7 +214,7 @@ public:
 
 private:
 	template<class ...Ts>
-	auto _get_query_iterator(std::string sql)
+	auto _get_record_range(std::string sql)
 	{
 		return RecordRange<Ts...>{m_db, sql};
 	}
@@ -225,7 +225,7 @@ private:
 		std::ostringstream stream;
 		stream << "SELECT name FROM sqlite_master WHERE type = 'table' AND name = '" << table_name << "';";
 
-		auto records = _get_query_iterator<std::string>(stream.str());
+		auto records = _get_record_range<std::string>(stream.str());
 		auto record_it = std::begin(records);
 		auto record = *record_it;
 		
