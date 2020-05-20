@@ -1,69 +1,99 @@
 #pragma once
+#include <cassert>
+#include <functional>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <tuple>
+#include <variant>
+#include <vector>
 
 #include "IDatabase.h"
 #include "sqlite3.h"
 
 
-class DataBase : public IDataBase
+class DataBase
 {
 	sqlite3* m_db{};
 
 public:
-	template<class T, class ...Ts>
-	class RecordRange : public IRecordRange
+	template<class ...Ts>
+	class RecordRange
 	{
 		sqlite3* m_db{};
 		std::string m_sql;
 
 	public:
-		template<class T, class ...Ts>
+		template<class... Ts>
 		class Iterator
 		{
-			using RecordType = std::tuple<T, Ts...>;
+			const int m_column_count = sizeof...(Ts);
+			using ValueType = std::variant<Ts...>;
+			using RecordType = std::vector<ValueType>;
+
 			sqlite3_stmt* m_statement{};
-			int m_sqlite3_status{ SQLITE_DONE };
+			int m_status{ SQLITE_DONE };
+			int m_column_index{ -1 };
+
+			const size_t m_hash{};
 
 		public:
-			Iterator( sqlite3* db, std::string sql )
+			explicit Iterator(std::string sql, sqlite3* db, size_t hash) : m_status{ ::sqlite3_prepare_v2(db, sql.c_str(), -1, &m_statement, {}) }, m_hash{ hash }
 			{
-				auto result = sqlite3_prepare_v2( db, sql.c_str(), -1, &m_statement, {} );
-
-				if ( result != SQLITE_OK ) {
+				if (m_status == SQLITE_OK) {
+					m_status = ::sqlite3_step(m_statement);
+				} else {
 					auto message = sqlite3_errmsg( db );
 
 					throw std::string( message );
 				}
 			}
 
-			Iterator( int status ) : m_sqlite3_status{ status }
+			explicit Iterator(std::string sql, size_t hash) : m_hash{ hash }, m_status{ SQLITE_DONE }
 			{}
 
 			~Iterator()
 			{
-				sqlite3_finalize( m_statement );
+				m_status = ::sqlite3_finalize( m_statement );
 			}
 
 			Iterator& operator++()
 			{
-				m_sqlite3_status = sqlite3_step( m_statement );
+				/*
+				http://wiki.pchero21.com/wiki/Libsqlite3
+
+				SQLITE_BUSY
+				현재 데이터베이스에 lock 이 걸려 있음을 뜻한다. 다시 재시도를 하거나 롤백 후, 다시 시도할 수 있다.
+				SQLITE_DONE
+				해당 쿼리 구문이 성공적으로 수행(종료)되었음을 의미한다. sqlite3_reset() 호출 후, sqlite3_step()를 수행하여야 한다.
+				SQLITE_ROW
+				수행 결과에 데이터가 있음을 나타낸다. select 구문과 같은 경우를 생각해볼 수 있는데, 이후 column_access 함수들을 사용할 수 있다.
+				SQLITE_ERROR
+				오류가 발생했음을 나타낸다.
+				SQLITE_MISUSE
+				잘못된 사용법 오류.
+				*/
+				m_status = ::sqlite3_step( m_statement );
 
 				return *this;
 			}
 
-			Record operator*()
+			RecordType operator*()
 			{
-				auto name{ sqlite3_column_text( m_statement, 0 ) };
-				auto score{ sqlite3_column_int( m_statement, 1 ) };
-				auto _name = std::string{ reinterpret_cast<const char*>( name ) };
-
-				return { _name, score };
+				if (m_status == SQLITE_ROW) {
+					return { _get_column<Ts>(m_statement)... };
+				}
+				else {
+					assert(m_status == SQLITE_DONE);
+					return {};
+				}
 			}
 
 			bool operator==( const Iterator& lhs ) const
 			{
-				return lhs.m_sqlite3_status == this->m_sqlite3_status;
+				assert(lhs.m_hash == m_hash);
+
+				return lhs.m_status == m_status;
 			}
 
 			bool operator!=( const Iterator& lhs ) const
@@ -72,57 +102,154 @@ public:
 			}
 
 		private:
-			template
-			auto get()
+			template<class T>
+			ValueType _get_column(sqlite3_stmt* statement)
+			{
+				static_assert(false, "not implemented type");
+
+				return {};
+			}
+
+			template<>
+			ValueType _get_column<int>(sqlite3_stmt* statement)
+			{
+				auto column = _get_column_index();
+
+				return ::sqlite3_column_int(m_statement, column);
+			}
+
+			template<>
+			ValueType _get_column<std::string>(sqlite3_stmt* statement)
+			{
+				auto column = _get_column_index();
+				auto text{ ::sqlite3_column_text(m_statement, column) };
+				auto text_{ reinterpret_cast<const char*>(text) };
+
+				return std::string{ text_ };
+			}
+
+			int _get_column_index()
+			{
+				return ++m_column_index % m_column_count;
+			}
+
+			template<class T>
+			size_t _get_hash(T t)
+			{
+				return std::hash<T>{}(t);
+			}
 		};
 
 	public:
 		RecordRange( sqlite3* db, std::string sql ) : m_db{ db }, m_sql{ sql }
 		{}
 
-		Iterator begin()
+		auto begin()
 		{
-			return <T, Ts...>{ m_db, m_sql };
+			static_assert(sizeof(this) == sizeof(size_t), "invalid size");
+
+			return Iterator<Ts...>{ m_sql, m_db, reinterpret_cast<size_t>(this) };
 		}
 
-		Iterator end()
+		auto end()
 		{
-			return { static_cast<int>( SQLITE_DONE ) };
+			static_assert(sizeof(this) == sizeof(size_t), "invalid size");
+
+			return Iterator<Ts...>{ m_sql, reinterpret_cast<size_t>(this) };
 		}
-
-
 	};
 
 	DataBase()
 	{
-		auto rc = sqlite3_open( "tetris.db", &m_db );
+		auto result = ::sqlite3_open( "tetris.db", &m_db );
 
-		if ( rc ) {
-			auto sql = \
-				"CREATE TABLE RANK( \
-						ID INT PRIMARY KEY NOT NULL, \
-						NAME TEXT NOT NULL, \
-						SCORE INT NOT NULL \
-					)";
-			char* messageError{};
-			sqlite3_exec( m_db, sql, {}, {}, &messageError );
-
-			if ( exit != SQLITE_OK ) {
-				sqlite3_free( messageError );
-			}
+		if (SQLITE_OK == result) {
+			_initialize_table();
+		}
+		else {
+			throw std::string("db open failed");
 		}
 	}
 
 	virtual ~DataBase()
 	{
-		sqlite3_close( m_db );
+		auto result = ::sqlite3_close( m_db );
+
+		assert(SQLITE_OK == result);
 	}
 
-	IRecordRange get_rank( size_t size ) const override final
-	{
-		auto sql = "SELECT * FROM RANK ORDERED BY SCORE";
-		RecordRange r{ m_db, sql };
+	/*
+	get range for iterator. you can use such style:
 
-		return r;
+	0th elem: name
+	1st elem: score
+	*/
+	auto get_ranks( size_t size )
+	{
+		auto sql = "SELECT NAME, SCORE FROM RANK ORDER BY SCORE";
+
+		return _get_query_iterator<std::string, int>(sql);
+	}
+
+	bool put_rank(const std::string& name, int score)
+	{
+		std::ostringstream stream;
+		stream << "INSERT INTO RANK (NAME, SCORE) VALUES ('" << name << "', " << score << ");";
+
+		char* message_error{};
+		auto result = sqlite3_exec(m_db, stream.str().c_str(), {}, {}, &message_error);
+
+		if (result == SQLITE_OK) {
+			return true;
+		}
+		else {
+			std::string message_error_{ message_error };
+			::sqlite3_free(message_error);
+
+			std::cerr << message_error << std::endl;
+
+			return {};
+		}
+	}
+
+private:
+	template<class ...Ts>
+	auto _get_query_iterator(std::string sql)
+	{
+		return RecordRange<Ts...>{m_db, sql};
+	}
+
+	void _initialize_table()
+	{
+		constexpr auto table_name = "RANK";
+		std::ostringstream stream;
+		stream << "SELECT name FROM sqlite_master WHERE type = 'table' AND name = '" << table_name << "';";
+
+		auto records = _get_query_iterator<std::string>(stream.str());
+		auto record_it = std::begin(records);
+		auto record = *record_it;
+		
+		if (record.empty()) {
+			auto sql = \
+				"CREATE TABLE RANK( \
+					ID INTEGER PRIMARY KEY AUTOINCREMENT, \
+					NAME TEXT NOT NULL, \
+					SCORE INT NOT NULL \
+				)";
+			char* message_error{};
+			auto result = ::sqlite3_exec(m_db, sql, {}, {}, &message_error);
+
+			if (result == SQLITE_OK) {
+				std::cout << "table created: " << table_name << std::endl;
+			} else {
+				std::string message_error_{ message_error };
+				::sqlite3_free(message_error);
+
+				throw message_error_;
+			}
+		}
+		else {
+			assert(std::get<0>(record[0]) == table_name);
+		}
 	}
 };

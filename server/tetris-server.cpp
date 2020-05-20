@@ -9,52 +9,97 @@ using namespace utility;
 using namespace http;
 using namespace web::http::experimental::listener;
 
+#define NAME U("name")
+#define SCORE U("score")
+
+
 namespace tetris {
 	class Tetris
 	{
-		const utility::string_t m_address;
-		http_listener m_listener;
+		uri_builder m_uri;
+		http_listener m_listener_get_rank;
+		http_listener m_listener_put_rank;
 		DataBase m_dataBase;
 
 	public:
-		Tetris( const utility::string_t& address ) : 
-			m_address{ address },
-			m_listener{ address }
+		Tetris( web::uri_builder& uri ) :
+			m_uri{ uri },
+			m_listener_get_rank{ uri_builder{uri}.append_path(U("get_rank")).to_uri() },
+			m_listener_put_rank{ uri_builder{uri}.append_path(U("put_rank")).to_uri() }
 		{
-			web::uri_builder uri( address );
-			uri.append_path( U( "blackjack/dealer" ) );
-
-			auto addr = uri.to_uri().to_string();
-
-			m_listener.support( methods::GET, [=]( http_request message ) { handle_get( message ); } );
-			m_listener.support( methods::PUT, [=]( http_request message ) { handle_put( message ); } );
-			m_listener.support( methods::POST, [=]( http_request message ) { handle_post( message ); } );
+			m_listener_get_rank.support( methods::GET, [=]( http_request message ) { handle_get_rank( message ); } );
+			m_listener_put_rank.support( methods::GET, [=]( http_request message ) { handle_put_rank( message ); } );
 		}
 
 		~Tetris()
 		{
-			m_listener.close().wait();
+			for (auto l : { &m_listener_get_rank, &m_listener_put_rank }) {
+				l->close().wait();
+			}
 		}
 
 		void wait() 
 		{
-			ucout << utility::string_t( U( "Listening for requests at: " ) ) << m_address << std::endl;
+			for (auto l : { &m_listener_get_rank, &m_listener_put_rank }) {
+				ucout << utility::string_t(U("Listening for requests at: ")) << l->uri().to_string() << std::endl;
 
-			auto task = m_listener.open();
-			task.wait();
+				auto task = l->open();
+				task.wait();
+			}
 		}
 
 	private:
-		void handle_get( http_request message )
+		void handle_get_rank( http_request message )
 		{
+			ucout << message.to_string() << std::endl;
+
+			constexpr size_t rank_count{ 10 };
+
+			auto rank_range = m_dataBase.get_ranks(rank_count);
+			auto rank_array = json::value::array(rank_count);
+			auto rank_end_it = std::end(rank_range);
+			constexpr int array_index_init_value{ -1 };
+			int array_index{ array_index_init_value };
+
+			for (auto it = std::begin(rank_range); it != rank_end_it; ++it) {
+				auto r = *it;
+				auto name = std::get<0>(r[0]);
+				utility::string_t name_{ std::cbegin(name), std::cend(name) };
+
+				auto score = std::get<1>(r[1]);
+
+				auto values = json::value::object();
+				values[NAME] = json::value::string(name_);
+				values[SCORE] = json::value::number(score);
+				rank_array[++array_index] = values;
+			}
+
+			if (array_index == array_index_init_value) {
+				message.reply(status_codes::NotFound);
+			}
+			else {
+				message.reply(status_codes::OK, rank_array);
+			}
 		}
 
-		void handle_put( http_request message )
+		void handle_put_rank( http_request message )
 		{
-		}
+			ucout << message.to_string() << std::endl;
 
-		void handle_post( http_request message )
-		{}
+			std::string name{ "name" };
+			int score{ 99 };
+
+			if (m_dataBase.put_rank(name, score)) {
+				message.reply(status_codes::OK);
+
+				std::cout << "put rank:" << name << ", " << score << std::endl;
+			}
+			else {
+				message.reply(status_codes::NotAcceptable);
+
+				std::cerr << "failed put rank" << std::endl;
+			}
+		}
 	};
 }
 
@@ -74,7 +119,10 @@ int main( int argc, char* argv[] )
 	utility::string_t address = U( "http://localhost:" );
 	address.append( port );
 
-	tetris::Tetris tetris{ address };
+	uri_builder uri(address);
+	uri.append_path(U("tetris"));
+
+	tetris::Tetris tetris{ uri };
 	tetris.wait();
 
 	std::cout << "Press ENTER to exit." << std::endl;
