@@ -1,9 +1,3 @@
-[submodule "server/cpprestsdk"]
-	path = server/cpprestsdk
-	url = https://github.com/microsoft/cpprestsdk.git
-[submodule "server/sqlite"]
-	path = server/sqlite
-	url = https://github.com/sqlite/sqlite.git
 [submodule "server/vcpkg"]
 	path = server/vcpkg
 	url = https://github.com/microsoft/vcpkg.git

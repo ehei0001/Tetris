@@ -11,6 +11,7 @@ template<size_t COLUMN_COUNT, class T, class... Ts>
 class Iterator
 {
 	using ValueType = std::variant<T, Ts...>;
+	//using ColumnType = std::pair<size_t, ValueType>;
 	using RecordType = std::vector<ValueType>;
 
 	sqlite3_stmt* m_statement{};
@@ -112,9 +113,9 @@ private:
 	}
 
 	template<>
-	ValueType _get_column<int>(sqlite3_stmt* statement, size_t column_index)
+	ValueType _get_column<int>( sqlite3_stmt* statement, size_t column_index )
 	{
-		return ::sqlite3_column_int(m_statement, static_cast<int>(column_index));
+		return ::sqlite3_column_int( m_statement, static_cast<int>(column_index) );
 	}
 
 	template<>

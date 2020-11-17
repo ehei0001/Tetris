@@ -61,8 +61,11 @@ int main( int argc, char* argv[] )
 		return 1;
 	}
 
-	std::cout << "Server running. Press ENTER to exit." << std::endl;
-
+	{
+		std::wcout << std::endl << uri.to_string() << std::endl;
+		std::cout << "Press ENTER to exit" << std::endl;
+	}
+	
 	std::string line;
 	std::getline( std::cin, line );
 
