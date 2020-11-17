@@ -130,13 +130,13 @@ public:
 			template<>
 			ValueType _get_column<int>(sqlite3_stmt* statement, size_t column_index)
 			{
-				return ::sqlite3_column_int(m_statement, column_index);
+				return ::sqlite3_column_int(m_statement, static_cast<int>(column_index));
 			}
 
 			template<>
 			ValueType _get_column<std::string>(sqlite3_stmt* statement, size_t column_index)
 			{
-				auto text{ ::sqlite3_column_text(m_statement, column_index) };
+				auto text{ ::sqlite3_column_text(m_statement, static_cast<int>(column_index)) };
 				auto text_{ reinterpret_cast<const char*>(text) };
 
 				return std::string{ text_ };
