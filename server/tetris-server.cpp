@@ -31,12 +31,8 @@ namespace tetris {
 			m_listener_put_rank.support( methods::GET, [=]( http_request message ) { handle_put_rank( message ); } );
 		}
 
-		~Tetris()
-		{
-			for (auto l : { &m_listener_get_rank, &m_listener_put_rank }) {
-				l->close().wait();
-			}
-		}
+		Tetris() 
+		{}
 
 		void wait() 
 		{
@@ -110,22 +106,59 @@ int wmain( int argc, wchar_t* argv[] )
 int main( int argc, char* argv[] )
 #endif
 {
-	utility::string_t port = U( "34568" );
-	if ( argc == 2 )
-	{
-		port = argv[1];
+	utility::string_t address = U("http://localhost:");
+	utility::string_t port = U("34568");
+
+	if (argc > 0) {
+		if (argc > 1)
+		{
+			address = argv[1];
+		}
+
+		if (argc > 2)
+		{
+			port = argv[2];
+		}
 	}
 
-	utility::string_t address = U( "http://localhost:" );
-	address.append( port );
+	address.append(port);
 
 	uri_builder uri(address);
+
+	if (!uri.is_valid()) 
+	{
+		std::cerr << L"error: address is invalid" << std::endl;
+		std::cout << L"usage: tetris-server.exe [host] [port]" << std::endl;
+		return 1;
+	}
+
 	uri.append_path(U("tetris"));
 
-	tetris::Tetris tetris{ uri };
-	tetris.wait();
+	tetris::Tetris tetris;
 
-	std::cout << "Press ENTER to exit." << std::endl;
+	try 
+	{
+		tetris = std::move(tetris::Tetris{ uri });
+	}
+	catch (std::invalid_argument& e) 
+	{
+		std::cerr << "invalid uri:" << e.what() << std::endl;
+		std::cerr << "... usage: tetris-server.exe [ip] [port]" << std::endl;
+		return 1;
+	}
+	
+	try
+	{
+		tetris.wait();
+	}
+	catch (web::http::http_exception& e)
+	{	 
+		std::cerr << "Launching is failed" << std::endl;
+		std::cerr << "exception: " << e.what() << std::endl;
+		return 1;
+	}
+
+	std::cout << "Server running. Press ENTER to exit." << std::endl;
 
 	std::string line;
 	std::getline( std::cin, line );

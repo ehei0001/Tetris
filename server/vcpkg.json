@@ -1,0 +1,8 @@
+{
+	"name": "mypackage",
+	"version-string" : "v0.5.0",
+	"dependencies" : [
+		"cpprestsdk",
+		"sqlite3"
+	]
+}

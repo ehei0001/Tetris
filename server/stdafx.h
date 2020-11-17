@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <new>
 #include <random>
 #include <sstream>
 #include <string>

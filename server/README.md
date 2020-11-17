@@ -3,9 +3,5 @@ server
  
 #build
 
-    > git clone https://github.com/Microsoft/vcpkg.git
-    > cd vcpkg
-
-    PS> .\bootstrap-vcpkg.bat
-    PS> .\vcpkg install cpprestsdk cpprestsdk:x64-windows
-    PS> .\vcpkg install sqlite3
+    > vcpkg\bootstrap-vcpkg.sh
+    > vcpkg\vcpkg.exe install --feature-flags=manifests --triplet=x64-windows
