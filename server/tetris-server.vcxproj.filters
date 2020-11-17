@@ -13,19 +13,22 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="헤더 파일\interface">
-      <UniqueIdentifier>{7d2aebf0-c8e2-486e-86d7-48c03e1a31e4}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="tetris-server.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="RecordRange.h">
       <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Database.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -35,11 +38,8 @@
     <ClInclude Include="Database.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="IDatabase.h">
-      <Filter>헤더 파일\interface</Filter>
-    </ClInclude>
-    <ClInclude Include="IRecordRange.h">
-      <Filter>헤더 파일\interface</Filter>
+    <ClInclude Include="Server.h">
+      <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

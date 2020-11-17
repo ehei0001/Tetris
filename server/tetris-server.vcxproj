@@ -180,17 +180,18 @@ copy $(ehei_vcpkg_root)x64-windows\bin\cpprest_2_10.dll $(OutDir) /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="RecordRange.h" />
+    <ClCompile Include="Server.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="tetris-server.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Database.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h" />
-    <ClInclude Include="IRecordRange.h" />
+    <ClInclude Include="Server.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="IDatabase.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
