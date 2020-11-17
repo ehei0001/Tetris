@@ -1,4 +1,9 @@
 #include "stdafx.h"
+#include <codecvt>
+#include <execution>
+#include <locale>
+#include <sstream>
+
 #include "Database.h"
 #include "Server.h"
 
@@ -31,45 +36,59 @@ void Server::handle_get_rank(http_request message)
 	ucout << message.to_string() << std::endl;
 
 	constexpr size_t rank_count{ 10 };
-	constexpr auto NAME = U("name");
-	constexpr auto SCORE = U("score");
-
-	auto rank_range = m_db->get_ranks(rank_count);
+	
+	auto ranks = m_db->get_ranks(rank_count);
 	auto rank_array = json::value::array(rank_count);
-	auto rank_end_it = std::end(rank_range);
-	constexpr int array_index_init_value{ -1 };
-	int array_index{ array_index_init_value };
+	auto update_array = [array = &rank_array](auto column) {
+		auto row = column.first;
+		auto& result = column.second;
+		auto name = std::get<0>( result[0] );
+		utility::string_t name_{ std::cbegin( name ), std::cend( name ) };
 
-	for (auto it = std::begin(rank_range); it != rank_end_it; ++it) {
-		auto r = *it;
-		auto name = std::get<0>(r[0]);
-		utility::string_t name_{ std::cbegin(name), std::cend(name) };
+		constexpr auto name_key = U( "name" );
+		constexpr auto score_key = U( "score" );
 
-		auto score = std::get<1>(r[1]);
+		auto score = std::get<1>( result[1] );
 		auto values = json::value::object();
-		values[NAME] = json::value::string(name_);
-		values[SCORE] = json::value::number(score);
-		rank_array[++array_index] = values;
-	}
+		values[name_key] = json::value::string( name_ );
+		values[score_key] = json::value::number( score );
+		array[row] = values;
+	};
+
+	//std::for_each(std::execution::seq, std::begin( ranks ), std::end( ranks ), update_array );
+	std::for_each( std::begin( ranks ), std::end( ranks ), update_array );
 
 	message.reply(status_codes::OK, rank_array);
 }
 
 void Server::handle_put_rank(http_request message)
 {
-	ucout << message.to_string() << std::endl;
+	auto split_query = uri::split_query( message.request_uri().query() );
+	auto name_iter = split_query.find( U( "name" ) );
+	auto score_iter = split_query.find( U( "score" ) );
 
-	std::string name{ "name" };
-	int score{ 99 };
+	if (name_iter == split_query.end() || score_iter == split_query.end()) {
+		message.reply( status_codes::NotAcceptable );
 
-	if (m_db->put_rank(name, score)) {
-		message.reply(status_codes::OK);
-
-		std::cout << "put rank:" << name << ", " << score << std::endl;
+		std::cerr << "uri is wrong: name and score" << std::endl;
 	}
-	else {
-		message.reply(status_codes::NotAcceptable);
+	else
+	{
+		// https://stackoverflow.com/questions/15287001/is-there-any-universal-way-to-convert-wstring-to-stdstring-considering-all-pos
+		auto code_page = GetACP();
+		auto name_pointer = name_iter->second.c_str();
+		auto buffer_size = ::WideCharToMultiByte( code_page, 0, name_pointer, -1, 0, 0, 0, 0 );
+		auto buffer = static_cast<char*>(alloca( buffer_size ));
+		::WideCharToMultiByte( code_page, 0, name_pointer, -1, buffer, buffer_size, 0, 0 );
 
-		std::cerr << "failed put rank" << std::endl;
+		std::wstringstream sstream( score_iter->second );
+		int score{};
+		sstream >> score;
+
+		if (m_db->put_rank( buffer, score )) {
+			message.reply( status_codes::OK );
+
+			std::cout << "put rank:" << buffer << ", " << score << std::endl;
+		}
 	}
 }

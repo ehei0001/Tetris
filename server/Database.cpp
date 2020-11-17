@@ -40,7 +40,7 @@ Database::~Database()
 	}
 }
 
-Database::Rank_type Database::get_ranks(size_t size)
+Database::rank_t Database::get_ranks(size_t size)
 {
 	constexpr auto sql = "SELECT NAME, SCORE FROM RANK ORDER BY SCORE";
 
@@ -99,6 +99,6 @@ void Database::_initialize_table()
 		}
 	}
 	else {
-		assert(std::get<0>(record[0]) == table_name);
+		//assert(std::get<0>(record[0]) == table_name);
 	}
 }

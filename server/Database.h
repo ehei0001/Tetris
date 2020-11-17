@@ -1,5 +1,5 @@
 #pragma once
-#include "RecordRange.h"
+#include "Record.h"
 
 
 class Database
@@ -13,7 +13,7 @@ public:
 	Database(const Database&) = delete;
 	Database& operator=(Database&) = delete;
 
-	using Rank_type = RecordRange<std::string, int>;
+	using rank_t = Record<std::string, int>;
 
 	/*
 	get range for iterator. you can use such style:
@@ -21,14 +21,14 @@ public:
 	0th elem: name
 	1st elem: score
 	*/
-	Rank_type get_ranks(size_t size);
+	rank_t get_ranks(size_t size);
 	bool put_rank(const std::string& name, int score);
 
 private:
 	template<class ...Ts>
 	auto _get_record_range(std::string sql)
 	{
-		return RecordRange<Ts...>{m_db, sql};
+		return Record<Ts...>{m_db, sql};
 	}
 
 	void _initialize_table();
